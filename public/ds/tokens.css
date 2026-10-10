@@ -15,6 +15,7 @@
   --specialBg: #f6e8ff; --specialInk: #6b2d91;       /* condition: limits */
   --neutralBg: color-mix(in srgb, var(--ink) 7%, var(--bg)); --neutralInk: var(--muted);
   --scrim: rgba(17,17,22,.32);
+  --tileInk: #29293d; --tileInkOn: #ffffff;           /* a dark solid surface ("Najtaniej dziś") */
   /* aisle tiles */
   --t-warzywa: #d5f2d4; --t-pieczywo: #feecd6; --t-nabial: #cce7f4; --t-mieso: #fedfda; --t-wedliny: #fff2bb; --t-mrozonki: #c1e8e7; --t-suche: #feecd6; --t-konserwy: #ece3f6;
   --t-przyprawy: #fedfda; --t-sniadanie: #f9e2f4; --t-kawa: #efe4dc; --t-napoje: #cce7f4; --t-alkohol: #f9e2f4; --t-chemia: #c1e8e7; --t-higiena: #dfe8fb; --t-dziecko: #fff2bb; --t-zwierzeta: #feecd6; --t-dom: #eeeef6;
@@ -39,7 +40,7 @@
 :root.dark {
   --bg: #111116; --soft: #1b1b23; --card: #16161c; --line: #24242f;
   --ink: #f1f1f6; --muted: #8e8ea3; --faint: #4b4b5c;
-  --cta: #3cc28c; --ctaInk: #08241c; --pencil: #d9d9e6; --mint: #14302a;
+  --cta: #3cc28c; --ctaInk: #08241c; --pencil: #d9d9e6; --mint: #14302a; --tileInk: #24243a; --tileInkOn: #f1f1f6;
   --warnBg: #4a370c; --warnInk: #ffd27a; --infoBg: #172c4d; --infoInk: #a8c8ff; --specialBg: #2d1a3a; --specialInk: #d3a4f2;
   --shadow-1: 0 1px 3px rgba(0,0,0,.5); --shadow-2: 0 6px 16px -10px rgba(0,0,0,.8); --shadow-3: 0 18px 50px rgba(0,0,0,.5);
   --t-warzywa: #1d3324; --t-pieczywo: #3a2c1d; --t-nabial: #1b2d3a; --t-mieso: #3a2222; --t-wedliny: #383218; --t-mrozonki: #17313a; --t-suche: #3a2c1d; --t-konserwy: #2c2338;

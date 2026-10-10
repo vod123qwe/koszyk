@@ -377,14 +377,19 @@ function buildList() {
     sec.innerHTML = `<div class="h"><div class="c">${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
-  // ("Gdzie dziś taniej": a slim banner when something still to buy is really cheaper somewhere; the comparison opens in a sheet)
-  const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length;
-  if (total && best) { const B = CMP[best.id];
-    wrap.insertAdjacentHTML('beforeend', `<div class="cmpb"><div class="c"><button type="button" class="banner" id="cmpOpen"><span class="banner__icon" aria-hidden="true">🏷️</span><span class="banner__text">Najtaniej dziś w ${esc(IN[best.id])}<small>−${zl(B.save)} na ${B.n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="banner__action">${cs.length > 1 ? 'Porównaj' : 'Szczegóły'}${ic('chev', 2)}</span></button></div></div>`);
-    $('#cmpOpen').onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id); }
+  // (the bottom: two square tiles side by side. Left, dark: where your list is cheapest today → the comparison.
+  //  Right, our green: this shop's leaflet → a full-screen mini leaflet. The list itself stays about your products.)
+  const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length, sid = store(), L0 = EP[sid];
+  const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
+  wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
+    ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj sklepy' : 'Zobacz produkty'}${ic('chev', 2)}</span></button>`
+      : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
+    <button type="button" class="tile tile--brand" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
+  loadShopPromos();
+  const tc = $('#tCheap'); if (tc) tc.onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id);
+  $('#tLeaf').onclick = openCover;
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
-    $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
-  renderShopPromos(wrap, open); }
+    $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; } }
 // ---------- offers: each shop's whole current leaflet (groceries and drugstore), what you usually buy first ----------
 const STAPLES = [['Mleko', 'nabial'], ['Chleb', 'pieczywo'], ['Jajka', 'nabial'], ['Masło', 'nabial'], ['Banany', 'warzywa'], ['Pomidory', 'warzywa'], ['Ser żółty', 'wedliny'], ['Kawa', 'kawa'], ['Jogurt', 'nabial'], ['Makaron', 'suche'], ['Kurczak', 'mieso'], ['Jabłka', 'warzywa'], ['Ziemniaki', 'warzywa'], ['Woda', 'napoje'], ['Papier toaletowy', 'higiena'], ['Płyn do naczyń', 'chemia']];
 let EP = {}, epAt = 0, epBusy = false;
@@ -451,6 +456,11 @@ function shpGroups(id, open) { const ranked = rankLeaf(EP[id] || []).filter(o =>
   const my = mine().slice(0, 30), mineFits = o => my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)), forMe = ranked.filter(mineFits).slice(0, 6), rest = ranked.filter(o => !forMe.includes(o)), by = {};
   for (const o of rest) (by[o.cat] = by[o.cat] || []).push(o);
   return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...orderFor(id).filter(c => by[c]).map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
+let coverOpen = false, coverRaf = 0;
+function openCover() { const el = $('.cover'); if (!el) return; coverOpen = true; el.hidden = false; renderCover(true); requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
+function closeCover() { const el = $('.cover'); if (!el || !coverOpen) return; coverOpen = false; el.classList.remove('show'); document.documentElement.classList.remove('locked'); setTimeout(() => { if (!coverOpen) el.hidden = true; }, 420); }
+function renderCover(top) { const body = $('.cv-body'); if (!body || !coverOpen) return; const y = top ? 0 : body.scrollTop;
+  $('.cv-title').textContent = 'Gazetka ' + storeOf(store()).name; body.innerHTML = ''; renderShopPromos(body, openItems()); body.scrollTop = y; shpSpy(); }
 function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
   if (l && !l.length) return;
   if (shpStore !== id) { shpStore = id; shpShown = 14; }
@@ -462,12 +472,12 @@ function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShop
       : shown.map(g => `<div class="shg" data-g="${g.id}"><div class="c shgh">${esc(g.title)}<span>${g.items.length}</span></div>${g.show.map(epRow).join('')}</div>`).join('')
         + (shpShown < total ? `<button type="button" class="btn btn--secondary btn--lg btn--block shmore">Doczytaj więcej <b>${Math.min(12, total - shpShown)}</b><small>z ${total - shpShown}</small></button>` : '')}
     <p class="note">Najpierw to, co zwykle kupujesz, potem działy w kolejności sklepu. Dotknij, żeby dopisać do listy.</p></section>`);
-  const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec);
+  const sec = wrap.querySelector('.shp'); wireAdds(sec, true); wireAll(sec);
   const more = sec.querySelector('.shmore'); if (more) more.onclick = () => { shpShown += 12; render(); };
   sec.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go;
     // (an aisle not loaded yet comes in first, then we go there)
-    if (!sec.querySelector(`.shg[data-g="${g}"]`)) { let n = 0; for (const x of groups) { if (x.id === g) { shpShown = Math.max(shpShown, n + 8); break; } n += x.items.length; } render(); }
-    const t = $(`#shp .shg[data-g="${g}"]`), bar = $('#shp .shs'); if (t) { const y = t.getBoundingClientRect().top + scrollY - (bar ? bar.offsetHeight : 0) + 1; scrollTo({ top: y, behavior: Math.abs(y - scrollY) > 2500 ? 'auto' : 'smooth' }); } });   // (a long way: jump, a short one: glide)
+    if (!sec.querySelector(`.shg[data-g="${g}"]`)) { let n = 0; for (const x of groups) { if (x.id === g) { shpShown = Math.max(shpShown, n + x.items.length + 4); break; } n += x.items.length; } render(); }
+    const t = $(`#shp .shg[data-g="${g}"]`), bar = $('#shp .shs'), sc = $('.cv-body'); if (t && sc) { const y = t.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - (bar ? bar.offsetHeight : 0) + 1; sc.scrollTo({ top: y, behavior: Math.abs(y - sc.scrollTop) > 2500 ? 'auto' : 'smooth' }); } });   // (a long way: jump, a short one: glide)
   shpSpy(); }
 // (the pill of the aisle you are looking at lights up)
 let shpRaf = 0;
@@ -475,7 +485,7 @@ function shpSpy() { const sec = $('#shp'); if (!sec) return; const bar = sec.que
   let cur = null; sec.querySelectorAll('.shg').forEach(g => { if (g.getBoundingClientRect().top <= top + 12) cur = g.dataset.g; });
   sec.classList.toggle('stuck', !!bar && bar.getBoundingClientRect().top <= 0.5 && sec.getBoundingClientRect().top < 0);
   sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('chip--on')) { b.classList.toggle('chip--on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
-addEventListener('scroll', () => { cancelAnimationFrame(shpRaf); shpRaf = requestAnimationFrame(shpSpy); }, { passive: true });
+
 function renderEmpty(wrap) {
   const picks = picksForEmpty(), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];
@@ -620,7 +630,7 @@ function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(
       if (!now.length) { cb.checked = true; toast('Zostaw przynajmniej jeden sklep'); return; }
       const keep = myIds().filter(id => now.includes(id)), added = now.filter(id => !keep.includes(id));
       put('settings', { id: 'myStores', value: [...keep, ...added] }, true); PR = {}; prKey = ''; storesKey = ''; render(); promosSoon(); compareSoon(); loadShopPromos(); vib(6); })); }
-let mounted = false;
+let mounted = false;   // (the cover's own scroll drives the aisle pills)
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
     <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
@@ -628,19 +638,20 @@ function mount() {
       <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
     <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div></div></nav>
     <main id="list"></main>
-    <div class="dock"><div class="chips" id="chips" hidden></div>
+    <div class="dock"><div class="pblur" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chips" id="chips" hidden></div>
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
       <button class="ibtn ibtn--primary ibtn--xl mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
-    <div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+    <div class="cover" role="dialog" aria-modal="true" aria-label="Gazetka" hidden><div class="cv-top"><button class="ibtn ibtn--secondary" type="button" id="cvClose" aria-label="Zamknij">${ic('x', 2)}</button><span class="cv-title">Gazetka</span><button class="btn btn--primary btn--sm" type="button" id="cvDone">Wróć do listy</button></div><div class="cv-body"></div></div><div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
   addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
   $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet;
   $('#f').onclick = () => openAdder();
   const aq = $('#adQ'); aq.oninput = () => { if (!aq.value.trim()) editFrom = null; adderRender(); };
   $('#adF').onsubmit = e => { e.preventDefault(); submitText(aq.value); };
-  $('.ad-done').onclick = closeAdder; $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
+  $('.ad-done').onclick = closeAdder; $('#cvClose').onclick = closeCover; $('#cvDone').onclick = closeCover;
+  $('.cv-body').addEventListener('scroll', () => { cancelAnimationFrame(coverRaf); coverRaf = requestAnimationFrame(shpSpy); }, { passive: true }); $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
   $('#adList').addEventListener('pointerdown', e => { if (e.target.closest('button')) e.preventDefault(); });   // (keep the keyboard up while tapping suggestions)
-  addEventListener('keydown', e => { if (e.key === 'Escape' && adderOpen) closeAdder(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && adderOpen) closeAdder(); else if (e.key === 'Escape' && coverOpen && !$('.sheet.show')) closeCover(); });
   const mic = $('#mic'); mic.addEventListener('pointerdown', e => { e.preventDefault(); startVoice(); }); mic.addEventListener('contextmenu', e => e.preventDefault());
   mic.addEventListener('lostpointercapture', stopVoice); mic.addEventListener('pointerdown', e => { try { mic.setPointerCapture(e.pointerId); } catch { } });
   addEventListener('pointerup', stopVoice); addEventListener('pointercancel', stopVoice); addEventListener('blur', stopVoice);
@@ -657,7 +668,7 @@ function render() {
   const h1 = !all.length ? `Co kupujemy<br><mark>${day}?</mark>` : n ? `Do kupienia<br><mark>${n} ${plural(n, 'rzecz', 'rzeczy', 'rzeczy')}</mark>` : 'Wszystko<br><mark>w koszyku</mark>';
   if (h1 !== heroKey) { heroKey = h1; $('#h1').innerHTML = h1; }
   $('#lead').textContent = !all.length ? 'Przytrzymaj zielony przycisk i mów. Ułożymy listę tak, jak idziesz przez sklep.' : n ? `Ułożone po kolei, jak idziesz przez ${THRU[s.id] || s.name}.` : 'Lista na dziś odhaczona.';
-  renderList(); renderChips(); }
+  renderList(); renderChips(); if (coverOpen) renderCover(); }
 
 render(); if (token) { sync(); promosSoon(); compareSoon(); }
 if ('serviceWorker' in navigator && !/^(localhost|127\.)/.test(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => { });

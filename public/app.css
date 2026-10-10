@@ -452,3 +452,31 @@ svg { display: block; }
 .sbr .em { grid-area: em; align-self: start; } .sbr .sbo { grid-area: name; min-width: 0; display: flex; flex-direction: column; } .sbr .sbo b { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
 .sbr .sbp { grid-area: price; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; } .sbr .sbp b { font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } .sbr .sbp s { font-size: var(--fs-xs); color: var(--muted); }
 .sbr .btn { grid-area: btn; justify-self: end; }
+
+/* the bottom tiles */
+.tiles { margin: var(--s-8) 0 var(--s-6); }
+.tiles .c { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+@media (min-width: 672px) { .tiles .tile { aspect-ratio: 5 / 4; } }
+/* the cover: a full-screen mini leaflet */
+html.locked, html.locked body { overflow: hidden; }
+.cover { position: fixed; inset: 0; z-index: 25; display: flex; flex-direction: column; background: var(--soft); transform: translateY(100%); transition: transform var(--dur-3) var(--ease); }
+.cover.show { transform: none; }
+.cv-top { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); padding-top: calc(var(--s-3) + env(safe-area-inset-top)); background: var(--bg); border-bottom: 1px solid var(--line); }
+.cv-title { flex: 1; font-size: var(--fs-lg); font-weight: var(--fw-semibold); }
+.cv-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(var(--s-8) + var(--safeB)); }
+.cover .shp { margin: 0; border: 0; animation: none; }
+.toast, .snack { z-index: 45; }
+.scrim { z-index: 26; } .sheet { z-index: 27; }
+
+/* the bottom bar: no solid slab; a white gradient (0 → 100%) over a progressive blur, so the list slides softly under it */
+body { padding-bottom: calc(190px + var(--safeB)); }
+.dock { background: none; border-top: 0; padding-top: 44px; isolation: isolate; }
+.dock::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent) 0%, color-mix(in srgb, var(--bg) 55%, transparent) 30%, color-mix(in srgb, var(--bg) 88%, transparent) 55%, var(--bg) 78%); }
+.pblur { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
+.pblur i { position: absolute; inset: 0; -webkit-backdrop-filter: blur(var(--b)); backdrop-filter: blur(var(--b)); -webkit-mask-image: linear-gradient(to bottom, transparent var(--a), #000 var(--c)); mask-image: linear-gradient(to bottom, transparent var(--a), #000 var(--c)); }
+.pblur i:nth-child(1) { --b: 1px; --a: 0%; --c: 25%; } .pblur i:nth-child(2) { --b: 3px; --a: 15%; --c: 45%; }
+.pblur i:nth-child(3) { --b: 6px; --a: 35%; --c: 65%; } .pblur i:nth-child(4) { --b: 12px; --a: 55%; --c: 85%; }
+.dock .chips { position: relative; }
+.dock .field.opener { box-shadow: 0 4px 18px -8px rgba(41,41,61,.18), inset 0 0 0 1px var(--line); background: var(--bg); }
+:root.dark .dock .field.opener { box-shadow: 0 4px 18px -8px rgba(0,0,0,.6), inset 0 0 0 1px var(--line); }
