@@ -77,3 +77,8 @@ test('emoji: popularne produkty i marki mają emoji', () => {
   const T = ['Mleko', 'Chleb', 'Buraki', 'Serwetki', 'Whisky', 'Kasza manna', 'Masło', 'Milka', 'Persil', 'Żubr', 'Pampers', 'Kapary', 'Sok pomarańczowy', 'Papier toaletowy'];
   assert.deepEqual(T.filter(t => !emojiFor(t)), []);
 });
+
+test('duże zakupy jednym tchem: 30 pozycji, nic się nie skleja', () => {
+  const t = 'no to tak dwa mleka chleb żytni pół kilo sera żółtego sześć jajek masło dwie kostki jogurt naturalny kilogram jabłek banany trzy cytryny cebula czosnek pomidory malinowe ogórki kiszone pierś z kurczaka kilo mięsa mielonego na obiad ryż basmati makaron penne sos pomidorowy koncentrat pomidorowy kawa ziarnista herbata zielona sok tymbark zgrzewka wody papier toaletowy płyn do naczyń kapsułki do prania pasta do zębów karma dla kota żwirek i jeszcze czekolada milka oraz chipsy';
+  assert.equal(full(t), 'Mleko | Chleb żytni | Ser żółty | Jajka | Masło | Jogurt naturalny | Jabłka | Banany | Cytryny | Cebula | Czosnek | Pomidory malinowe | Ogórki kiszone | Pierś z kurczaka | Mięso mielone (na obiad) | Ryż basmati | Makaron penne | Sos pomidorowy | Koncentrat pomidorowy | Kawa ziarnista | Herbata zielona | Sok tymbark | Woda | Papier toaletowy | Płyn do naczyń | Kapsułki do prania | Pasta do zębów | Karma dla kota | Żwirek | Czekolada milka | Chipsy');
+});
