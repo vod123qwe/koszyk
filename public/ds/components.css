@@ -90,3 +90,18 @@ input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 
 .tile--quiet { background: var(--soft); color: var(--muted); }
 .tile:disabled { opacity: .6; }
 @media (hover: hover) { button.tile:hover { filter: brightness(1.06); } }
+
+/* ---------- Offer: one offer from a leaflet. Media and the first line of the name share a centre line; terms in one row;
+   one price line; an optional full-width action. Flat = no padding or line (inside another block). ---------- */
+.offer { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: var(--s-4); row-gap: var(--s-4); padding: var(--s-6) var(--s-5); border-bottom: 1px solid var(--line); }
+.offer--flat { padding: 0; border: 0; }
+.offer__media { width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--r-md); background: var(--tile, var(--soft)); font-size: 24px; }
+.offer__body { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.offer__name { min-height: 48px; display: flex; align-items: center; font-size: var(--fs-md); font-weight: var(--fw-semibold); line-height: 1.3; letter-spacing: -.005em; }
+.offer__meta { margin-top: -6px; font-size: var(--fs-xs); color: var(--muted); }
+.offer .terms { margin: 0; }
+.offer__price { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); margin-top: 2px; }
+.offer__price b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } .offer__price b small { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--muted); }
+.offer__price s { font-size: var(--fs-sm); color: var(--muted); white-space: nowrap; }
+.offer__action { grid-column: 1 / -1; }
+.offers { border-top: 1px solid var(--line); }

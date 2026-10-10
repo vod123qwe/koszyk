@@ -130,8 +130,12 @@ function promoKinds(o) { const c = (o.cond || []).join(' | '), out = []; let m;
   if (!out.length && o.oldPrice && o.oldPrice > o.price) out.push({ t: 'obniżka', k: 'plain' });
   return out; }
 const kindBadges = (o, max = 2) => promoKinds(o).slice(0, max).map(k => `<span class="badge badge--${{ multi: 'warn', card: 'info', plain: 'neutral' }[k.k]}">${esc(k.t)}</span>`).join('');
-const termsHtml = o => { const t = [...(o.size ? [o.size] : []), ...(o.cond || [])]; return t.length ? `<span class="terms">${t.map(x => `<span class="badge badge--pill badge--${/przy zakupie|gratis|2\. sztuka/.test(x) ? 'warn' : /kart|aplikac/.test(x) ? 'info' : /limit|wybranych/.test(x) ? 'special' : 'neutral'}">${esc(x)}</span>`).join('')}</span>` : ''; };
+const termsHtml = o => { const t = [...(o.cond || []), ...(o.size ? [o.size] : [])]; return t.length ? `<span class="terms">${t.map(x => `<span class="badge badge--pill badge--${/przy zakupie|gratis|2\. sztuka/.test(x) ? 'warn' : /kart|aplikac/.test(x) ? 'info' : /limit|wybranych/.test(x) ? 'special' : 'neutral'}">${esc(x)}</span>`).join('')}</span>` : ''; };
 const perUnit = o => o.unit ? ` / ${o.unit}` : '';
+// (the Offer: media, the exact name, one row of terms, one price line; meta = shop and dates when it helps; action = a full-width button)
+const priceLine = o => `<span class="offer__price">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<b>${zl(o.price)}${perUnit(o) ? `<small>${perUnit(o)}</small>` : ''}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span>`;
+const offerHtml = (o, { action = '', meta = '', flat = false } = {}) => `<div class="offer${flat ? ' offer--flat' : ''}"><span class="offer__media" style="--tile:var(--t-${o.cat || 'dom'})">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '•')}</span>
+  <div class="offer__body"><b class="offer__name">${esc(o.title || o.name)}</b>${meta ? `<small class="offer__meta">${meta}</small>` : ''}${termsHtml(o)}${priceLine(o)}</div>${action ? `<div class="offer__action">${action}</div>` : ''}</div>`;
 // ---------- promotions that ended or began since the last visit: said once, when you come back ----------
 // (each product on the list remembers the cut it had in this shop; nothing is removed unless you tap the cross)
 let promoChecked = false;
@@ -143,13 +147,10 @@ function subsFor(it, sid = store()) { const head = norm(it.name).split(' ')[0]; 
 // (worth pointing at when you named a particular product, or when yours is not on offer)
 const subsHint = it => { if (it.done) return []; const subs = subsFor(it); return subs.length && (!realDeal(it.name) || it.name.trim().split(/\s+/).length > 1) ? subs : []; };
 function subsSheet(it) { const own = realDeal(it.name), subs = subsFor(it), sid = store(), sh0 = storeOf(sid);
-  const close = sheet(`<h3>Zamienniki w promocji</h3><p class="sub">Ten sam rodzaj produktu, taniej w ${esc(IN[sid] || sh0.name)}. Zamień, a ilość na liście zostanie.</p>
-    <div class="sbcur"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="sbn"><small>Na Twojej liście</small><b>${esc(it.name)}${qtyText(it) ? ` <span class="qty">${esc(qtyText(it))}</span>` : ''}</b>
-      ${own ? `<span class="badges">${pct(own) ? `<span class="badge badge--promo">${pct(own)}</span>` : ''}${kindBadges(own)}</span><small>${esc(own.title || own.name)} · ${zl(own.price)}</small>` : '<small>bez promocji w tym sklepie</small>'}</span></div>
-    <div class="sbl">${subs.map((o, i) => `<div class="sbr"><span class="em" style="--tile:var(--t-${o.cat || 'dom'})">${esc(o.emoji || emojiGuess(o.name) || '•')}</span>
-      <span class="sbo"><b>${esc(o.title || o.name)}</b>${termsHtml(o)}</span>
-      <span class="sbp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o, 1)}</span><b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span>
-      <button type="button" class="btn btn--secondary btn--sm" data-swap="${i}">Zamień</button></div>`).join('')}</div>`, sh => {
+  const close = sheet(`<h3>Zamienniki w promocji</h3><p class="sub">Ten sam rodzaj produktu, taniej w ${esc(IN[sid] || sh0.name)}. Ilość na liście zostanie.</p>
+    <div class="sbcur"><small>Na Twojej liście</small>
+      ${own ? offerHtml(own, { flat: true }) : `<div class="offer offer--flat"><span class="offer__media" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><div class="offer__body"><b class="offer__name">${esc(it.name)}${qtyText(it) ? ` · ${esc(qtyText(it))}` : ''}</b><small class="offer__meta">bez promocji w tym sklepie</small></div></div>`}</div>
+    <div class="offers">${subs.map((o, i) => offerHtml(o, { action: `<button type="button" class="btn btn--secondary btn--block" data-swap="${i}">${ic('swap', 2)}Zamień na ten produkt</button>` })).join('')}</div>`, sh => {
     sh.querySelectorAll('[data-swap]').forEach(b => b.onclick = () => { const o = subs[+b.dataset.swap], cur = C.items[it.id]; if (!o || !cur) return;
       const name = o.title || o.name; put('items', { ...cur, name, cat: o.cat || cur.cat, emoji: o.emoji || null, promo: null, q: null, opts: [] });
       focusRow = { id: it.id, until: Date.now() + 2500 }; lit.set(it.id, Date.now()); vib(10); close(); promosSoon(); compareSoon(); toast(`Zamieniono na: ${name}`); }); }); }
@@ -417,7 +418,7 @@ async function loadShopPromos() { const need = MY().filter(x => EP[x.id] === und
     for (const o of r.items || []) { const k = norm(o.name); if (!best[k] || offPct(o) > offPct(best[k]) || (offPct(o) === offPct(best[k]) && o.price < best[k].price)) best[k] = o; }
     EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
   epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
-const epRow = o => `<button class="ep" type="button" data-add="${esc(o.title || o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.title || o.name)}</span>${termsHtml(o)}</span><span class="dp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o, 1)}</span><b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
+const epRow = o => `<button class="ep" type="button" data-add="${esc(o.title || o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.title || o.name)}</span>${termsHtml(o)}</span><span class="dp">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
 const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
   if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
@@ -543,18 +544,16 @@ function compareSheet() { const total = openItems().length, ms = MY(), hit = ms.
     ${none.map(x => `<div class="cmpr off" style="--sc:${x.color}"><i></i><span class="cmpn"><b>${esc(x.name)}</b><small>brak obniżek na Twoje produkty</small></span></div>`).join('')}</div>
     <p class="hint">Liczymy tylko obniżki z przekreśloną ceną. Pełnego kosztu zakupów nie podajemy, bo sklepy nie publikują zwykłych cen.</p>`, sh => sh.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => dealsSheet(b.dataset.cmp))); }
 function dealsSheet(id) { const D = CMP[id]; if (!D || !D.n) return; const total = openItems().length, sh0 = storeOf(id);
-  const byName = n => openItems().find(i => i.name === n) || { name: n, cat: 'dom' };
   const close = sheet(`<h3>Taniej w ${esc(IN[id] || sh0.name)}</h3><p class="sub">${D.n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z Twojej listy w promocji. Razem około ${zl(D.save)} mniej.</p>
-    <div class="dls">${D.hits.map(({ item, o }) => { const it = byName(item), save = o.oldPrice - o.price; return `<div class="dl">
-      <div class="dlh"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="dli"><small>Z Twojej listy</small><b>${esc(item)}</b></span><span class="dlp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span></div>
-      <div class="dlo">${esc(o.title || o.name)}</div>${o.detail && o.detail !== o.name && o.detail !== o.title ? `<div class="dld">${esc(o.detail)}</div>` : ''}
-      ${termsHtml(o)}
-      ${o.multi > 1 ? `<p class="dlw">Cena promocyjna przy zakupie ${o.multi} szt. Za jedną sztukę zapłacisz zwykłą cenę.</p>` : ''}
-      <p class="dls2">Oszczędzasz ${zl(save)}${o.multi > 1 ? ' na sztuce' : ''} · do ${dm(o.until)}</p></div>`; }).join('')}</div>
+    <div class="offers">${D.hits.map(({ item, o }) => `<div class="dl"><div class="dl__for">Za <b>${esc(item)}</b> z Twojej listy · oszczędzasz ${zl(o.oldPrice - o.price)}${o.multi > 1 ? ' na sztuce' : ''} · do ${dm(o.until)}</div>
+      ${offerHtml(o, { flat: true })}${o.multi > 1 ? `<p class="dlw">Cena promocyjna przy zakupie ${o.multi} szt. Za jedną sztukę zapłacisz zwykłą cenę.</p>` : ''}</div>`).join('')}</div>
     ${id !== store() ? `<div class="pcb"><button type="button" class="btn btn--primary btn--lg btn--block ok" data-go>Ułóż listę pod ${esc(sh0.thru || sh0.name)}</button></div>` : ''}`, sh => {
     const g = sh.querySelector('[data-go]'); if (g) g.onclick = () => { put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); close(); vib(6); }; }); }
-function offersSheet(it) { const s = storeOf(store()), offs = PR[it.name] || [], d = x => `${x.slice(8, 10)}.${x.slice(5, 7)}`;
-  sheet(`<h3>${esc(it.name)} taniej</h3><div class="list">${offs.map(o => `<div class="off"><div>${esc(o.title || o.name)}<small>${s.name} · ${d(o.from)} – ${d(o.until)}</small>${termsHtml(o)}${o.detail ? `<small class="odet">${esc(o.detail)}</small>` : ''}</div><div class="r"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</div></div>`).join('')}</div><p class="hint">Ceny z gazetek promocyjnych (ding.pl). Sprawdź warunki w sklepie, np. aplikację albo kupno kilku sztuk.</p>`); }
+function offersSheet(it) { const s = storeOf(store()), offs = PR[it.name] || [];
+  sheet(`<h3>${esc(it.name)} taniej</h3><p class="sub">Promocje w ${esc(IN[s.id] || s.name)}, które pasują do tego produktu.</p>
+    <div class="offers">${offs.map(o => offerHtml(o, { meta: `${esc(s.name)} · ${dm(o.from)} – ${dm(o.until)}` })).join('')}</div>
+    <p class="hint">Ceny z gazetek promocyjnych (ding.pl). Warunki podajemy, gdy są w opisie oferty.</p>`); }
+
 // ---------- the dictation dictionary: what I say → how it is written ----------
 function wordsSheet() { const mine = Object.entries(myAliases()).sort((a, b) => a[0].localeCompare(b[0], 'pl')), n = Object.keys(CAT.aliases || {}).length;
   const close = sheet(`<h3>Słownik dyktowania</h3><p class="sub">Gdy powiesz słowo po lewej, na liście pojawi się to po prawej. Uczy się też samo: popraw dodany produkt przyciskiem „Zmień”.</p>
