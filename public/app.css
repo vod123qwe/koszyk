@@ -600,3 +600,9 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .edch { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
 .edf .btn--primary { margin-top: var(--s-5); }
 .sheet .edf .btn.eddel { color: #d93b40; gap: var(--s-2); } .edf .eddel svg { width: 18px; height: 18px; }
+
+
+/* the red "Usuń" layer only exists while a row is being swiped (a new row fading in must not flash red) */
+.row .del { visibility: hidden; } .row.sw .del { visibility: visible; }
+/* the suggestions and deals rise in once; rebuilt after an add they just stay (no replayed animation, nothing jumps) */
+.sec.ex.still, .sec.ex.still .frq__chip, .sec.ex.still .ep, .sec.ex.still .eps { animation: none; }

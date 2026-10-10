@@ -210,7 +210,7 @@ function freqHtml() { const picks = freqPicks(); if (!picks.length) return '';
   const rows = [[], []], w = [0, 0]; picks.forEach((p, i) => { const r = w[0] <= w[1] ? 0 : 1; rows[r].push([p, i]); w[r] += p.name.length + 6; });
   const pill = ([p, i]) => { const o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0;
     return `<button type="button" class="chip chip--tile frq__chip" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--tile:var(--t-${p.cat || 'dom'});--i:${i}"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${deal ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; };
-  return `<section class="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq"><div class="frq__rows">${rows.map(r => `<div class="frq__row">${r.map(pill).join('')}</div>`).join('')}</div></div></section>`; }
+  return `<section class="freq" data-anchor="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq"><div class="frq__rows">${rows.map(r => `<div class="frq__row">${r.map(pill).join('')}</div>`).join('')}</div></div></section>`; }
 function suggestions() {
   const open = new Set(openItems().map(i => norm(i.name))), now = Date.now(), hs = Object.values(C.history).filter(h => !open.has(h.id) && looksLikeProduct(h));
   const promo = hs.map(h => ({ h, p: bestOffer(h.name) || leafHit(h.name, h.cat) })).filter(x => x.p).sort((a, b) => offPct(b.p) - offPct(a.p)).slice(0, 6);   // (on the list's promos or anywhere in this shop's leaflet)
@@ -364,9 +364,9 @@ function swipe(row, it) {
   const line = row.querySelector('.line'); let x0 = 0, y0 = 0, dx = 0, on = false, dir = null;
   line.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; x0 = e.clientX; y0 = e.clientY; dx = 0; on = true; dir = null; });
   line.addEventListener('pointermove', e => { if (!on) return; const mx = e.clientX - x0, my = e.clientY - y0;
-    if (!dir && Math.hypot(mx, my) > 8) { dir = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (dir === 'x') { row.classList.add('swiping'); try { line.setPointerCapture(e.pointerId); } catch { } } }
+    if (!dir && Math.hypot(mx, my) > 8) { dir = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (dir === 'x') { row.classList.add('swiping', 'sw'); try { line.setPointerCapture(e.pointerId); } catch { } } }
     if (dir !== 'x') return; dx = Math.min(0, mx); const v = dx < -90 ? -90 + (dx + 90) * .45 : dx; line.style.transform = `translateX(${v}px)`; });
-  const end = () => { if (!on) return; on = false; row.classList.remove('swiping'); if (dir === 'x' && dx < -110) { vib(15); put('items', { ...it, deleted: true }); } else line.style.transform = ''; };
+  const end = () => { if (!on) return; on = false; row.classList.remove('swiping'); if (dir === 'x' && dx < -110) { vib(15); put('items', { ...it, deleted: true }); } else { line.style.transform = ''; setTimeout(() => row.classList.remove('sw'), 360); } };
   line.addEventListener('pointerup', end); line.addEventListener('pointercancel', end); }
 
 // ---------- the list ----------
@@ -406,14 +406,15 @@ function showFocus(smooth) { focusRow = null; return;
   scrollTo({ top: Math.max(0, r.top + scrollY - (dock - r.height) / 2), behavior: smooth ? 'smooth' : 'auto' }); }
 function renderList() { const wrap = $('#list'), y = scrollY; wrap.style.minHeight = wrap.offsetHeight + 'px';
   try { buildList(); } finally { wrap.style.minHeight = ''; }
-  if (Math.abs(scrollY - y) > 1) scrollTo(0, y);
+  if (Math.abs(scrollY - y) > 1) scrollTo(0, y); holdPin();
   if (focusRow) showFocus(false); }
+let browsing = false, exShown = false;   // (set when the list was shown empty; lasts until the app is opened again)
 function buildList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
   if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="banner"><span class="badge badge--promo">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
-  if (!all.length) { renderEmpty(wrap); return; }
+  if (!all.length) { browsing = true; renderEmpty(wrap); return; }
   for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
     sec.innerHTML = `<div class="h"><div class="c"><span class="hic" aria-hidden="true">${CAT_EMOJI[cat] || ''}</span>${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
@@ -423,7 +424,8 @@ function buildList() {
   //  Right, our green: this shop's leaflet → a full-screen mini leaflet. The list itself stays about your products.)
   const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length, sid = store(), L0 = EP[sid];
   const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
-  if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
+  if (browsing) renderEmpty(wrap);
+  else if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
   wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
     ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
@@ -461,8 +463,22 @@ async function loadShopPromos() { const need = MY().filter(x => EP[x.id] === und
     EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
   epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
 const epRow = o => `<button class="ep" type="button" data-add="${esc(o.title || o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.title || o.name)}</span>${termsHtml(o)}</span><span class="dp">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
-const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
-  if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
+// (what you tapped stays under your finger while the list above it grows or shrinks; the page itself is never scrolled away)
+let pin = null;
+function keepPlace(b, fn) { if (b.closest('.cover')) return fn();
+  const key = b.dataset.add, sel = `[data-add="${CSS.escape(key)}"]`, box = b.closest('[data-anchor]');
+  pin = { sel, i: [...document.querySelectorAll(sel)].indexOf(b), t0: b.getBoundingClientRect().top, bsel: box && `[data-anchor="${box.dataset.anchor}"]`, b0: box && box.getBoundingClientRect().top, until: Date.now() + 3000 };
+  fn(); holdPin(); }
+// (every rebuild in the next few seconds, like the deal's price arriving, keeps that spot too; your own scrolling lets go)
+function holdPin() { if (!pin || Date.now() > pin.until || coverOpen) { pin = null; return; }
+  const n = document.querySelectorAll(pin.sel)[pin.i], nb = pin.bsel && document.querySelector(pin.bsel);
+  const d = n ? n.getBoundingClientRect().top - pin.t0 : nb ? nb.getBoundingClientRect().top - pin.b0 : 0; if (Math.abs(d) > 1) scrollBy(0, d); }
+['wheel', 'touchmove', 'keydown'].forEach(t => addEventListener(t, () => { pin = null; }, { passive: true }));
+const wireAdds = (roots, keep, toggle) => (roots instanceof Element ? [roots] : [...roots]).forEach(root => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => keepPlace(b, () => {
+  const name = b.dataset.add, cur = toggle && Object.values(C.items).find(i => !i.deleted && norm(i.name) === norm(name));
+  if (cur) { put('items', { ...cur, deleted: true }); vib(6); return; }
+  const added = addItems([{ name, category: b.dataset.cat || undefined }]); vib(8);
+  if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${name}`); } else if (added.length) snack(added, name); })));
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
 // (the whole leaflet in a sheet, by aisle in this shop's order; adding keeps it open)
 const dm = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
@@ -530,15 +546,16 @@ function shpSpy() { const sec = $('#shp'); if (!sec) return; const bar = sec.que
   sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('chip--on')) { b.classList.toggle('chip--on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
 
 function renderEmpty(wrap) {
-  const picks = picksForEmpty(), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
+  const onList = new Set(Object.values(C.items).filter(i => !i.deleted).map(i => norm(i.name))), has = n => onList.has(norm(n));
+  const picks = picksForEmpty().filter(p => !has(p.name)), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];
     const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
-      : rankLeaf(l).slice(0, 5).map(epRow).join('') + allBtn(s.id, l.length);
+      : rankLeaf(l).slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
     return `<div class="eps" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
-  wrap.insertAdjacentHTML('beforeend', `<section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--tile frq__chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; }).join('')}</div></section>
-    <section class="sec ex"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
-  wireAdds(wrap); wireAll(wrap); loadShopPromos(); }
+  wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--tile frq__chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; }).join('')}</div></section>` : ''}
+    <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
+  exShown = true; wireAdds(wrap.querySelectorAll('.ex'), false, true); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
   const close = sheet(`<div class="warn"><span class="wi">${ic('trash', 2)}</span><h3>Wyczyścić całą listę?</h3>
       <p>Usuniesz wszystkie ${n} ${plural(n, 'pozycję', 'pozycje', 'pozycji')}, także te jeszcze niekupione. Lista zniknie też u pozostałych osób, z którymi ją dzielisz.</p>
