@@ -420,3 +420,5 @@ svg { display: block; }
 .deal .kbs { margin-top: 3px; }
 .off .r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .dlp .kbs, .pcp .kbs, .ep .dp .kbs { margin-bottom: 2px; }
+/* wide screens: the box sits in the same column as the list */
+@media (min-width: 672px) { .cmp { max-width: calc(var(--w) - 40px); margin-left: auto; margin-right: auto; } }
