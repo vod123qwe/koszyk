@@ -45,10 +45,15 @@ const CASES = [
   ['płyn do naczyń', 'Płyn do naczyń @chemia'],
   ['karma dla kota', 'Karma dla kota @zwierzeta'],
   ['coś na obiad', ''],
+  // odmiana po ogólnej nazwie zostaje w jednej pozycji
+  ['makaron penne ryż basmati', 'Makaron penne @suche | Ryż basmati @suche'],
+  ['ser mozzarella pomidory', 'Ser mozzarella @wedliny | Pomidory @warzywa'],
+  ['mleko jogurt', 'Mleko @nabial | Jogurt @nabial'],
 ];
 // "Nazwa (notatka)" i to, co schodzi z listy
 const full = text => { const r = localParse(text); return r.items.map(i => i.name + (i.note ? ` (${i.note})` : '')).join(' | ') + (r.remove.length ? ' −' + r.remove.join(', −') : ''); };
 const MORE = [
+  ['ser feta do sałatki', 'Ser feta (do sałatki)'],
   ['trzy kilo jabłek do szarlotki dwa litry mleka', 'Jabłka (do szarlotki) | Mleko'],
   ['mięso mielone na obiad i ziemniaki', 'Mięso mielone (na obiad) | Ziemniaki'],
   ['usuń mleko', ' −Mleko'],

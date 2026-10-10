@@ -1959,5 +1959,179 @@
   "storczyk",
   "róża",
   "doniczk"
- ]
+ ],
+ "varieties": {
+  "ser": [
+   "feta",
+   "mozzarella",
+   "gouda",
+   "edamski",
+   "cheddar",
+   "parmezan",
+   "camembert",
+   "brie",
+   "halloumi",
+   "ricotta",
+   "mascarpone",
+   "gorgonzola",
+   "tylżycki",
+   "podlaski",
+   "salami",
+   "koryciński",
+   "oscypek",
+   "emmentaler",
+   "grana",
+   "pecorino",
+   "kozi",
+   "pleśniowy",
+   "topiony",
+   "wędzony",
+   "światowid",
+   "serenada",
+   "ryki",
+   "włoszczowa"
+  ],
+  "serek": [
+   "wiejski",
+   "homogenizowany",
+   "almette",
+   "philadelphia",
+   "danio",
+   "fromage",
+   "kanapkowy"
+  ],
+  "makaron": [
+   "penne",
+   "spaghetti",
+   "fusilli",
+   "farfalle",
+   "świderki",
+   "kolanka",
+   "tagliatelle",
+   "lasagne",
+   "nitki",
+   "muszelki",
+   "rurki",
+   "kokardki",
+   "łazanki",
+   "ryżowy",
+   "udon",
+   "ramen",
+   "tortellini"
+  ],
+  "ryż": [
+   "basmati",
+   "jaśminowy",
+   "arborio",
+   "brązowy",
+   "dziki",
+   "paraboliczny",
+   "sushi"
+  ],
+  "kasza": [
+   "gryczana",
+   "jaglana",
+   "jęczmienna",
+   "pęczak",
+   "manna",
+   "kuskus",
+   "bulgur",
+   "quinoa"
+  ],
+  "herbata": [
+   "earl",
+   "lipton",
+   "saga",
+   "zielona",
+   "czarna",
+   "owocowa",
+   "miętowa",
+   "rumianek",
+   "yerba"
+  ],
+  "kawa": [
+   "ziarnista",
+   "mielona",
+   "rozpuszczalna",
+   "kapsułki",
+   "jacobs",
+   "tchibo",
+   "lavazza",
+   "espresso"
+  ],
+  "sok": [
+   "pomarańczowy",
+   "jabłkowy",
+   "multiwitamina",
+   "tymbark",
+   "hortex",
+   "cappy",
+   "kubuś"
+  ],
+  "jogurt": [
+   "naturalny",
+   "grecki",
+   "skyr",
+   "pitny",
+   "owocowy",
+   "activia",
+   "fruvita",
+   "jogobella"
+  ],
+  "mąka": [
+   "pszenna",
+   "żytnia",
+   "tortowa",
+   "krupczatka",
+   "orkiszowa",
+   "ziemniaczana",
+   "kukurydziana"
+  ],
+  "piwo": [
+   "żubr",
+   "tyskie",
+   "lech",
+   "harnaś",
+   "okocim",
+   "bezalkoholowe",
+   "pszeniczne",
+   "radler"
+  ],
+  "wino": [
+   "czerwone",
+   "białe",
+   "różowe",
+   "musujące",
+   "prosecco",
+   "primitivo",
+   "wytrawne",
+   "półsłodkie"
+  ],
+  "chleb": [
+   "żytni",
+   "pszenny",
+   "razowy",
+   "orkiszowy",
+   "tostowy",
+   "baltonowski",
+   "graham"
+  ],
+  "mleko": [
+   "łaciate",
+   "owsiane",
+   "kokosowe",
+   "sojowe",
+   "migdałowe",
+   "zagęszczone",
+   "uht"
+  ],
+  "woda": [
+   "gazowana",
+   "niegazowana",
+   "cisowianka",
+   "muszynianka",
+   "nałęczowianka",
+   "żywiec"
+  ]
+ }
 }

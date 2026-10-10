@@ -140,7 +140,8 @@ function addItems(list, removes = []) {
     const item = { id: uid(), name: it.name, qty: it.qty ?? null, unit: it.unit ?? null, cat: CATS[it.category || it.cat] ? (it.category || it.cat) : 'dom', emoji: it.emoji || null, note: it.note || null,
       q: it.question || null, opts: (it.options || []).slice(0, 3), done: false, deleted: false, createdAt: Date.now() };
     newIds.add(item.id); lit.set(item.id, Date.now()); put('items', item, true); added.push(item); }
-  for (const r of removes) { const ex = open.find(o => norm(o.name).includes(norm(r)) || norm(r).includes(norm(o.name))); if (ex) put('items', { ...ex, deleted: true }, true); }
+  const gone = []; for (const r of removes) { const ex = open.find(o => !o.deleted && !gone.includes(o.name) && (norm(o.name).includes(norm(r)) || norm(r).includes(norm(o.name)))); if (ex) { put('items', { ...ex, deleted: true }, true); gone.push(ex.name); } }
+  added.removed = gone;
   render(); promosSoon(); compareSoon(); setTimeout(() => newIds.clear(), 1200); setTimeout(() => { const t = Date.now(); lit.forEach((at, id) => t - at > 4400 && lit.delete(id)); }, 4500);
   const first = added[0] && document.querySelector(`.row[data-id="${added[0].id}"]`); if (first) { const r = first.getBoundingClientRect(), dock = $('.dock')?.getBoundingClientRect().top ?? innerHeight; if (r.top < 70 || r.bottom > dock) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   return added; }
@@ -148,7 +149,7 @@ async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
   hear(text, 'think');
   try { const r = await api('/api/parse', { text }); const added = addItems(r.items || [], r.remove || []);
-    hear(null); if (added.length) snack(added, text); else toast((r.remove || []).length ? 'Usunięto z listy' : 'Nic nowego na liście'); }
+    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); }
   catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (added.length) snack(added, text, 'Bez sieci, dodano'); } } }
 
 // ---------- the voice: hold the button and speak; let go and it goes on the list ----------
@@ -182,8 +183,8 @@ function hear(text, mode) { const el = $('.hear'); if (!el) return;
   const p = el.querySelector('p'); p.textContent = text || 'Mów, czego potrzebujesz…'; p.classList.toggle('ph', !text); }
 // (the snackbar after adding: what landed on the list, and a way back: "Zmień" puts the words in the field, the bin takes them off)
 let snackT = 0, editFrom = null;
-function snack(added, text, lead = 'Dodano') { const el = $('.snack'); if (!el) return; $('.toast')?.classList.remove('show');
-  el.querySelector('.st').innerHTML = `<b>${lead}:</b> ${added.map(i => esc(i.name + (i.qty == null ? '' : i.unit ? ' ' + qtyText(i) : ' ×' + qtyText(i)))).join(', ')}`;
+function snack(added, text, lead = 'Dodano', gone = []) { const el = $('.snack'); if (!el) return; $('.toast')?.classList.remove('show');
+  el.querySelector('.st').innerHTML = `<b>${lead}:</b> ${added.map(i => esc(i.name + (i.qty == null ? '' : i.unit ? ' ' + qtyText(i) : ' ×' + qtyText(i)))).join(', ')}${gone.length ? ` · <b>Usunięto:</b> ${gone.map(esc).join(', ')}` : ''}`;
   const hide = () => { el.classList.remove('show'); clearTimeout(snackT); };
   const drop = () => { added.forEach(a => { const cur = C.items[a.id]; if (cur && !cur.deleted) put('items', { ...cur, deleted: true }, true); lit.delete(a.id); }); render(); compareSoon(); hide(); };
   el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; const q = $('#q'); q.value = text; $('#f').classList.add('has'); q.focus(); q.setSelectionRange(text.length, text.length); };
