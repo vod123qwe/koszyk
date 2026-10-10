@@ -572,3 +572,8 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 
 /* while the add sheet is open the snackbar and the toast rise just above its input bar (and above the keyboard) */
 :root.adding .snack, :root.adding .toast { bottom: calc(var(--adB, 72px) + 12px); }
+
+/* product icons off: the rows are text only, the aisle's icon stands by its name */
+.sec .h .hic { display: none; font-size: 17px; line-height: 1; letter-spacing: 0; }
+:root.no-ic .sec .h .hic { display: inline; }
+:root.no-ic .row .em { display: none; }

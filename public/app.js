@@ -50,7 +50,9 @@ const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
 const theme = () => { let t = 'system'; try { t = localStorage.getItem('koszyk.theme') || 'system'; } catch { } return t; };
 function applyTheme() { const t = theme(), dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', dark); document.querySelector('meta[name=theme-color]').content = dark ? '#111116' : '#ffffff'; }
-applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+const iconsOn = () => localStorage.getItem('koszyk.icons') !== 'off';
+function applyIcons() { document.documentElement.classList.toggle('no-ic', !iconsOn()); }
+applyIcons(); applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
 // ---------- data and sync ----------
 let token = localStorage.getItem('koszyk.token') || '';
@@ -412,7 +414,7 @@ function buildList() {
   if (!all.length) { renderEmpty(wrap); return; }
   for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
-    sec.innerHTML = `<div class="h"><div class="c">${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
+    sec.innerHTML = `<div class="h"><div class="c"><span class="hic" aria-hidden="true">${CAT_EMOJI[cat] || ''}</span>${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
   // (the bottom: two square tiles side by side. Left, dark: where your list is cheapest today → the comparison.
@@ -608,6 +610,7 @@ function menuSheet() { const t = theme();
     <button data-a="words">${ic('book')}Słownik dyktowania</button>
     <button data-a="clear">${ic('check')}Usuń kupione z listy</button>
     ${Object.values(C.items).some(i => !i.deleted) ? `<button data-a="wipe" class="dz">${ic('trash')}Wyczyść całą listę</button>` : ''}
+    <button data-a="icons">${ic('cookie')}Ikony produktów: ${iconsOn() ? 'przy każdym' : 'tylko przy działach'}</button>
     <button data-a="theme">${ic('moon')}Motyw: ${t === 'dark' ? 'ciemny' : t === 'light' ? 'jasny' : 'jak w systemie'}</button>
     <button data-a="out">${ic('out')}Wyloguj to urządzenie</button></div><p class="hint">${aiOn ? 'Dyktowanie rozumie AI (Claude).' : 'AI wyłączone: dyktowanie dzieli prosty parser. Ustaw ANTHROPIC_API_KEY na serwerze, żeby rozumiało lepiej.'} Promocje z ding.pl.</p>`, sh => {
     sh.querySelector('[data-a=order]').onclick = () => { close(); setTimeout(orderSheet, 380); };
@@ -617,6 +620,7 @@ function menuSheet() { const t = theme();
     const wp = sh.querySelector('[data-a=wipe]'); if (wp) wp.onclick = () => { close(); setTimeout(clearAllSheet, 380); };
     sh.querySelector('[data-a=clear]').onclick = () => { Object.values(C.items).filter(i => i.done && !i.deleted).forEach(i => put('items', { ...i, deleted: true }, true)); render(); close(); };
     sh.querySelector('[data-a=theme]').onclick = () => { const n = t === 'system' ? 'dark' : t === 'dark' ? 'light' : 'system'; localStorage.setItem('koszyk.theme', n); applyTheme(); close(); setTimeout(menuSheet, 380); };
+    sh.querySelector('[data-a=icons]').onclick = () => { localStorage.setItem('koszyk.icons', iconsOn() ? 'off' : 'on'); applyIcons(); close(); setTimeout(menuSheet, 380); };
     sh.querySelector('[data-a=out]').onclick = () => { localStorage.removeItem('koszyk.token'); token = ''; close(); render(); }; }); }
 
 // ---------- the mark: "koszyk", its o a ring with an aqua dot (something in the basket) ----------
