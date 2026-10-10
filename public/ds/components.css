@@ -1,0 +1,77 @@
+/* Koszyk DS: komponenty. Każdy element interfejsu, który się powtarza, ma tu jedną definicję zbudowaną z tokenów.
+   Zmiana tutaj = zmiana wszędzie. Nowy element: najpierw komponent i jego wariant, potem użycie w widoku. Podgląd: /ds.html */
+
+/* ---------- Button: text action. Variants: primary (main action), secondary (outlined), ghost, danger. Sizes: sm, md, lg. ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-full);
+  font-size: var(--fs-md); font-weight: var(--fw-semibold); white-space: nowrap; transition: background var(--dur-2), box-shadow var(--dur-2), transform var(--dur-1) var(--ease), color var(--dur-2); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn:active { transform: scale(.97); }
+.btn:focus-visible, .ibtn:focus-visible, .chip:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+.btn--primary { background: var(--cta); color: var(--ctaInk); }
+.btn--secondary { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+@media (hover: hover) { .btn--secondary:hover, .ibtn--secondary:hover { background: var(--soft); } }
+.btn--ghost { color: var(--cta); padding: 0 var(--s-2); } :root.dark .btn--ghost { color: var(--cta); }
+.btn--danger { background: var(--danger); color: var(--dangerInk); }
+.btn--soft { background: var(--soft); color: var(--ink); }
+.btn--sm { height: var(--h-sm); padding: 0 var(--s-3); font-size: var(--fs-sm); } .btn--sm svg { width: 16px; height: 16px; }
+.btn--lg { height: var(--h-lg); padding: 0 var(--s-5); font-size: 16px; border-radius: var(--r-md); }
+.btn--block { display: flex; width: 100%; }
+
+/* ---------- Icon button: round, one icon. Same variants as Button. Sizes: sm 34, md 42, lg 52, xl 60. ---------- */
+.ibtn { position: relative; display: inline-grid; place-items: center; flex: none; width: var(--h-md); height: var(--h-md); border-radius: var(--r-full);
+  transition: background var(--dur-2), box-shadow var(--dur-2), transform var(--dur-1) var(--ease); }
+.ibtn svg { width: 20px; height: 20px; }
+.ibtn:active { transform: scale(.94); }
+.ibtn--primary { background: var(--cta); color: var(--ctaInk); }
+.ibtn--secondary { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+.ibtn--soft { background: var(--soft); color: var(--muted); }
+.ibtn--sm { width: var(--h-sm); height: var(--h-sm); } .ibtn--sm svg { width: 16px; height: 16px; }
+.ibtn--lg { width: var(--h-lg); height: var(--h-lg); }
+.ibtn--xl { width: var(--h-xl); height: var(--h-xl); } .ibtn--xl svg { width: 25px; height: 25px; }
+/* a dot on an icon button: offline, news */
+.ibtn.dot::after { content: ''; position: absolute; right: 1px; top: 1px; width: 9px; height: 9px; border-radius: 50%; background: #e0662f; box-shadow: 0 0 0 2px var(--bg); }
+
+/* ---------- Chip: a selectable pill (shops, aisles, filters). States: default, on. Optional colour dot (--sc) or tile (--tile). ---------- */
+.chip { position: relative; flex: none; display: inline-flex; align-items: center; gap: var(--s-2); height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-full);
+  background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--ink); white-space: nowrap;
+  transition: background var(--dur-2), box-shadow var(--dur-2), color var(--dur-2), transform var(--dur-1) var(--ease); }
+.chip:active { transform: scale(.96); }
+@media (hover: hover) { .chip:hover { background: var(--soft); } }
+.chip small { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); opacity: .6; }
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sc, var(--faint)); flex: none; }
+.chip--on, .chip--on:hover { background: var(--ink); color: var(--bg); box-shadow: none; }
+.chip--tile { background: var(--tile, var(--soft)); box-shadow: none; }
+.chip--sm { height: var(--h-sm); padding: 0 var(--s-3); font-size: 13px; }
+/* a tag riding on the top edge of a chip ("najtaniej") */
+.chip .flag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); }
+
+/* ---------- Badge: a small label. Variants: promo (discount), warn (buy several), info (card/app), special (limits), neutral. ---------- */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--r-xs); font-size: var(--fs-2xs); font-weight: var(--fw-bold); line-height: 1.35; white-space: nowrap; }
+.badge--promo { background: var(--promo); color: var(--promoInk); font-size: var(--fs-xs); }
+.badge--warn { background: var(--warnBg); color: var(--warnInk); }
+.badge--info { background: var(--infoBg); color: var(--infoInk); }
+.badge--special { background: var(--specialBg); color: var(--specialInk); }
+.badge--neutral { background: var(--neutralBg); color: var(--neutralInk); font-weight: var(--fw-semibold); }
+.badge--pill { border-radius: var(--r-full); padding: 1px 8px; }
+.badges { display: inline-flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
+
+/* ---------- Card: a grouped surface. Banner: a slim card that tells one thing and offers one action. ---------- */
+.card { border-radius: var(--r-lg); background: var(--soft); }
+.banner { display: flex; align-items: center; gap: var(--s-3); width: 100%; padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3); border-radius: var(--r-md); background: var(--mint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--promo) 22%, transparent); text-align: left; color: var(--ink); }
+.banner .banner__icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--bg); font-size: 20px; }
+.banner .banner__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.banner .banner__text small { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--muted); }
+.banner .banner__action { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--cta); }
+.banner .banner__action svg { width: 15px; height: 15px; }
+
+/* ---------- Switch ---------- */
+.switch { position: relative; width: 44px; height: 26px; flex: none; border-radius: var(--r-full); background: var(--line); transition: background var(--dur-2); }
+.switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .3s var(--ease); }
+input:checked + .switch { background: var(--cta); } input:checked + .switch::after { transform: translateX(18px); }
+input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 2px; }
+
+/* ---------- Input: a text field ---------- */
+.input { width: 100%; min-width: 0; height: var(--h-lg); padding: 0 var(--s-4); border: 0; border-radius: var(--r-full); background: var(--soft); font: inherit; font-size: 16px; color: var(--ink); outline: none; transition: box-shadow var(--dur-2); }
+.input:focus { box-shadow: inset 0 0 0 1.6px var(--cta); }
+.input::placeholder { color: var(--muted); }

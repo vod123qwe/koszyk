@@ -127,8 +127,8 @@ function promoKinds(o) { const c = (o.cond || []).join(' | '), out = []; let m;
   if (/tylko z aplikacją/.test(c)) out.push({ t: 'z aplikacją', k: 'card' }); else if (/z kartą/.test(c)) out.push({ t: 'z kartą', k: 'card' });
   if (!out.length && o.oldPrice && o.oldPrice > o.price) out.push({ t: 'obniżka', k: 'plain' });
   return out; }
-const kindBadges = (o, max = 2) => promoKinds(o).slice(0, max).map(k => `<span class="kb ${k.k}">${esc(k.t)}</span>`).join('');
-const termsHtml = o => { const t = [...(o.size ? [o.size] : []), ...(o.cond || [])]; return t.length ? `<span class="terms">${t.map(x => `<span class="tc${/przy zakupie|gratis|2\. sztuka/.test(x) ? ' multi' : /kart|aplikac/.test(x) ? ' card' : /limit|wybranych/.test(x) ? ' lim' : ''}">${esc(x)}</span>`).join('')}</span>` : ''; };
+const kindBadges = (o, max = 2) => promoKinds(o).slice(0, max).map(k => `<span class="badge badge--${{ multi: 'warn', card: 'info', plain: 'neutral' }[k.k]}">${esc(k.t)}</span>`).join('');
+const termsHtml = o => { const t = [...(o.size ? [o.size] : []), ...(o.cond || [])]; return t.length ? `<span class="terms">${t.map(x => `<span class="badge badge--pill badge--${/przy zakupie|gratis|2\. sztuka/.test(x) ? 'warn' : /kart|aplikac/.test(x) ? 'info' : /limit|wybranych/.test(x) ? 'special' : 'neutral'}">${esc(x)}</span>`).join('')}</span>` : ''; };
 const perUnit = o => o.unit ? ` / ${o.unit}` : '';
 // ---------- promotions that ended or began since the last visit: said once, when you come back ----------
 // (each product on the list remembers the cut it had in this shop; nothing is removed unless you tap the cross)
@@ -148,8 +148,8 @@ function promoChanges() { if (promoChecked || !mounted || !token) return; promoC
   const row = (it, o, tail) => `<div class="pcr" data-id="${it.id}"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="pct"><b>${esc(it.name)}</b><small>${esc(o.name)}${o.size ? ' · ' + esc(o.size) : ''}</small></span>${tail}</div>`;
   const close = sheet(`<h3>Promocje się zmieniły</h3><p class="sub">Od ostatniej wizyty w ${IN[sid] || storeOf(sid).name}. Nic nie usuwamy sami, zdecyduj, co zostaje na liście.</p>
     ${ended.length ? `<div class="lh pchh">Skończyły się<span>${ended.length}</span></div>${ended.map(({ it, was }) => row(it, was, `<span class="pcp"><s>${zl(was.price)}</s><small>teraz bez promocji</small></span><button class="pcx" type="button" data-rm="${it.id}" aria-label="Usuń z listy: ${esc(it.name)}">${ic('x', 2)}</button>`)).join('')}` : ''}
-    ${fresh.length ? `<div class="lh pchh">Nowe promocje<span>${fresh.length}</span></div>${fresh.map(({ it, now }) => row(it, now, `<span class="pcp"><span class="kbs r">${pct(now) ? `<span class="pill">${pct(now)}</span>` : ''}${kindBadges(now, 1)}</span><b>${zl(now.price)}</b></span>`)).join('')}` : ''}
-    <div class="pcb"><button type="button" class="ok">W porządku</button></div>`, sh => {
+    ${fresh.length ? `<div class="lh pchh">Nowe promocje<span>${fresh.length}</span></div>${fresh.map(({ it, now }) => row(it, now, `<span class="pcp"><span class="badges r">${pct(now) ? `<span class="badge badge--promo">${pct(now)}</span>` : ''}${kindBadges(now, 1)}</span><b>${zl(now.price)}</b></span>`)).join('')}` : ''}
+    <div class="pcb"><button type="button" class="btn btn--primary btn--lg btn--block ok">W porządku</button></div>`, sh => {
     sh.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { const r = b.closest('.pcr'), it = C.items[b.dataset.rm]; if (!it) return;
       const gone = r.classList.toggle('gone'); put('items', { ...it, deleted: gone }, true); b.innerHTML = gone ? ic('up', 2) : ic('x', 2); b.setAttribute('aria-label', (gone ? 'Przywróć: ' : 'Usuń z listy: ') + it.name); vib(8); render(); });
     sh.querySelector('.ok').onclick = () => close(); }); }
@@ -239,7 +239,7 @@ function adderRender() { const box = $('#adList'); if (!box) return; const raw =
   const hist = Object.values(C.history).filter(looksLikeProduct), common = (CAT.common || []).map(([name, cat]) => ({ name, cat }));
   const row = (x, tag) => { const on = onList.has(norm(x.name)), o = !on && leafHit(x.name, x.cat), deal = o && o.oldPrice && o.oldPrice > o.price;
     return `<button class="adr${on ? ' on' : ''}" type="button" data-name="${esc(x.name)}" data-cat="${esc(x.cat || '')}"><span class="em" style="--tile:var(--t-${x.cat || 'dom'})">${esc(x.emoji || emojiGuess(x.name) || CAT_EMOJI[x.cat] || '•')}</span>
-      <span class="adn"><span class="adt">${hl(x.name, q)}</span>${tag ? `<small>${tag}</small>` : ''}</span>${deal ? `<span class="pill">${pct(o)}</span>` : ''}<span class="ada" aria-hidden="true">${ic(on ? 'check' : 'plus', 2.2)}</span></button>`; };
+      <span class="adn"><span class="adt">${hl(x.name, q)}</span>${tag ? `<small>${tag}</small>` : ''}</span>${deal ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="ada" aria-hidden="true">${ic(on ? 'check' : 'plus', 2.2)}</span></button>`; };
   const sec = (title, list, tag) => list.length ? `<div class="adh">${title}</div>${list.map(x => row(x, tag && tag(x))).join('')}` : '';
   let html;
   if (!q) { const recent = hist.filter(h => !onList.has(norm(h.name))).sort((a, b) => b.lastAt - a.lastAt).slice(0, 10), seen = new Set(recent.map(h => norm(h.name)));
@@ -326,7 +326,7 @@ function rowEl(it) {
   row.innerHTML = `<div class="del">Usuń</div><div class="line"><div class="c">
     <span class="em${emojiOf(it) ? '' : ' none'}" style="--tile:var(--t-${it.cat})">${emojiOf(it) ? esc(emojiOf(it)) : ''}</span>
     <div class="txt"><div class="nm"><b>${esc(it.name)}</b>${q ? `<span class="qty">${esc(q)}</span>` : ''}<svg class="strike" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="${pencil(it.id)}"/></svg></div>
-      ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p ? `<button class="deal" type="button" data-promo aria-label="Promocja: ${esc(p.name)}">${pct(p) ? `<span class="pill">${pct(p)}</span>` : ''}<span class="dn"><span class="dnn">${esc(p.name)}</span>${promoKinds(p).some(k => k.k !== 'plain') ? `<span class="kbs">${kindBadges(p)}</span>` : ''}</span><span class="dp"><b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</span></button>` : ''}
+      ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p ? `<button class="deal" type="button" data-promo aria-label="Promocja: ${esc(p.name)}">${pct(p) ? `<span class="badge badge--promo">${pct(p)}</span>` : ''}<span class="dn"><span class="dnn">${esc(p.name)}</span>${promoKinds(p).some(k => k.k !== 'plain') ? `<span class="badges">${kindBadges(p)}</span>` : ''}</span><span class="dp"><b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</span></button>` : ''}
       ${!it.done && it.q ? `<div class="ask"><span>${esc(it.q)}</span>${(it.opts || []).map(o => `<button type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}</div>
     <button class="chk" type="button" aria-pressed="${done}" aria-label="${done ? 'Przywróć' : 'Kupione'}: ${esc(it.name)}">${ic('check', 2.4)}</button></div></div>`;
   row.querySelector('.chk').onclick = () => tick(row, it);
@@ -338,21 +338,18 @@ function renderList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
-  if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="pbx"><span class="pill">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
+  if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="banner"><span class="badge badge--promo">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
   if (!all.length) { renderEmpty(wrap); return; }
   for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
     sec.innerHTML = `<div class="h"><div class="c">${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
-  // ("Gdzie dziś taniej": only for what is still to buy, only real cuts, and only when there is at least one)
-  const cs = MY().filter(x => CMP[x.id]), best = cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0], total = open.length;
+  // ("Gdzie dziś taniej": a slim banner when something still to buy is really cheaper somewhere; the comparison opens in a sheet)
+  const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length;
   if (total && best) { const B = CMP[best.id];
-    wrap.insertAdjacentHTML('beforeend', `<section class="cmp"><div class="h"><div class="c">Gdzie dziś taniej</div></div>
-      <div class="lead"><div class="c">W <mark>${IN[best.id]}</mark> ${B.n === 1 ? 'jeden produkt' : B.n + ' ' + plural(B.n, 'produkt', 'produkty', 'produktów')} z Twojej listy ${plural(B.n, 'jest', 'są', 'jest')} w promocji, zaoszczędzisz około ${zl(B.save)}.</div></div>
-      <div class="grid">${cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save).map(x => `<button type="button" class="cell${x.id === best.id ? ' best' : ''}" data-cmp="${x.id}" style="--sc:${x.color}"><span class="s"><i></i>${x.name}</span><b>−${zl(CMP[x.id].save)}</b><small>${CMP[x.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')}</small><span class="go">Szczegóły ${ic('chev', 2)}</span></button>`).join('')}</div>
-      <p class="note">Liczymy tylko to, co jeszcze do kupienia, i tylko obniżki z gazetek. Dotknij sklepu, żeby zobaczyć produkty i warunki promocji.</p></section>`);
-    wrap.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => dealsSheet(b.dataset.cmp)); }
+    wrap.insertAdjacentHTML('beforeend', `<div class="cmpb"><div class="c"><button type="button" class="banner" id="cmpOpen"><span class="banner__icon" aria-hidden="true">🏷️</span><span class="banner__text">Najtaniej dziś w ${esc(IN[best.id])}<small>−${zl(B.save)} na ${B.n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="banner__action">${cs.length > 1 ? 'Porównaj' : 'Szczegóły'}${ic('chev', 2)}</span></button></div></div>`);
+    $('#cmpOpen').onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id); }
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
   renderShopPromos(wrap, open); }
@@ -383,7 +380,7 @@ async function loadShopPromos() { const need = MY().filter(x => EP[x.id] === und
     for (const o of r.items || []) { const k = norm(o.name); if (!best[k] || offPct(o) > offPct(best[k]) || (offPct(o) === offPct(best[k]) && o.price < best[k].price)) best[k] = o; }
     EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
   epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
-const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.name)}</span>${termsHtml(o)}</span><span class="dp"><span class="kbs r">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}${kindBadges(o, 1)}</span><b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
+const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.name)}</span>${termsHtml(o)}</span><span class="dp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o, 1)}</span><b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
 const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
   if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
@@ -396,7 +393,7 @@ function leafDates(l) { if (!l || !l.length) return ''; const c = {}; l.forEach(
 // (the leaflets of all three shops: pick one to open)
 function leafletsSheet() { loadShopPromos();
   const row = st => { const l = EP[st.id], best = l && l.length ? Math.max(...l.map(o => Math.round(offPct(o) * 100))) : 0;
-    return `<button class="lrow" type="button" data-open="${st.id}" style="--sc:${st.color}" ${l && l.length ? '' : 'disabled'}><i></i><span class="ln"><b>${esc(st.name)}</b><small>${l === undefined ? 'Wczytuję…' : !l ? 'Nie udało się pobrać' : !l.length ? 'Brak promocji spożywczych' : `${l.length} ${plural(l.length, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`}</small></span>${best ? `<span class="pill">do −${best}%</span>` : ''}${ic('chev', 2)}</button>`; };
+    return `<button class="lrow" type="button" data-open="${st.id}" style="--sc:${st.color}" ${l && l.length ? '' : 'disabled'}><i></i><span class="ln"><b>${esc(st.name)}</b><small>${l === undefined ? 'Wczytuję…' : !l ? 'Nie udało się pobrać' : !l.length ? 'Brak promocji spożywczych' : `${l.length} ${plural(l.length, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`}</small></span>${best ? `<span class="badge badge--promo">do −${best}%</span>` : ''}${ic('chev', 2)}</button>`; };
   const close = sheet(`<h3>Gazetki</h3><p class="sub">Promocje spożywcze i drogeryjne z gazetek sieci w tym tygodniu. Wybierz sklep, żeby przejrzeć całą listę po działach.</p>
     <div class="lrows">${MY().map(row).join('')}</div>`, sh => sh.querySelectorAll('[data-open]').forEach(b => b.onclick = () => leafletSheet(b.dataset.open)));
   if (MY().some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
@@ -405,7 +402,7 @@ function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(i
   const cats = order.filter(c => by[c]);
   sheet(`<div class="ltabs" role="tablist">${MY().map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
     <h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} ${leafDates(l)}. Dotknij, żeby dopisać do listy.</p>
-    <div class="lcats">${cats.map(c => `<button type="button" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
+    <div class="lcats">${cats.map(c => `<button type="button" class="chip chip--sm chip--tile" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
     <label class="lsearch">${ic('search', 2)}<input type="search" placeholder="Szukaj w gazetce…" autocomplete="off" aria-label="Szukaj w gazetce"></label>
     <div class="leaf">${cats.map(c => `<section class="lg" data-cat="${c}"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}<p class="wnone lnone" hidden>Nic takiego w tej gazetce.</p></div>`, sh => { wireAdds(sh, true);
     sh.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (b.dataset.tab !== id) leafletSheet(b.dataset.tab); });
@@ -427,11 +424,11 @@ function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShop
   if (shpStore !== id) { shpStore = id; shpShown = 14; }
   const groups = l ? shpGroups(id, open) : [], total = groups.reduce((n, g) => n + g.items.length, 0);
   let left = shpShown; const shown = groups.map(g => { const take = Math.max(0, Math.min(g.items.length, left)); left -= take; return { ...g, show: g.items.slice(0, take) }; }).filter(g => g.show.length);
-  wrap.insertAdjacentHTML('beforeend', `<section class="shp" id="shp"><div class="shs"><div class="c shh"><span class="pill">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? total : ''}</span>${l ? `<button type="button" class="shall" data-all="${id}">Gazetka ${ic('chev', 2)}</button>` : ''}</div>
-      ${groups.length ? `<div class="shpills" role="tablist">${groups.map(g => `<button type="button" role="tab" data-go="${g.id}" style="--tile:var(--t-${g.id === 'mine' ? 'warzywa' : g.id})">${esc(g.emoji || '')} ${esc(g.title)} <small>${g.items.length}</small></button>`).join('')}</div>` : ''}</div>
+  wrap.insertAdjacentHTML('beforeend', `<section class="shp" id="shp"><div class="shs"><div class="c shh"><span class="badge badge--promo">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? total : ''}</span>${l ? `<button type="button" class="shall" data-all="${id}">Gazetka ${ic('chev', 2)}</button>` : ''}</div>
+      ${groups.length ? `<div class="shpills" role="tablist">${groups.map(g => `<button type="button" role="tab" class="chip chip--sm" data-go="${g.id}" style="--tile:var(--t-${g.id === 'mine' ? 'warzywa' : g.id})">${esc(g.emoji || '')} ${esc(g.title)} <small>${g.items.length}</small></button>`).join('')}</div>` : ''}</div>
     ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>'
       : shown.map(g => `<div class="shg" data-g="${g.id}"><div class="c shgh">${esc(g.title)}<span>${g.items.length}</span></div>${g.show.map(epRow).join('')}</div>`).join('')
-        + (shpShown < total ? `<button type="button" class="shmore">Doczytaj więcej <b>${Math.min(12, total - shpShown)}</b><small>z ${total - shpShown}</small></button>` : '')}
+        + (shpShown < total ? `<button type="button" class="btn btn--secondary btn--lg btn--block shmore">Doczytaj więcej <b>${Math.min(12, total - shpShown)}</b><small>z ${total - shpShown}</small></button>` : '')}
     <p class="note">Najpierw to, co zwykle kupujesz, potem działy w kolejności sklepu. Dotknij, żeby dopisać do listy.</p></section>`);
   const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec);
   const more = sec.querySelector('.shmore'); if (more) more.onclick = () => { shpShown += 12; render(); };
@@ -445,7 +442,7 @@ let shpRaf = 0;
 function shpSpy() { const sec = $('#shp'); if (!sec) return; const bar = sec.querySelector('.shs'), top = bar ? bar.getBoundingClientRect().bottom : 0;
   let cur = null; sec.querySelectorAll('.shg').forEach(g => { if (g.getBoundingClientRect().top <= top + 12) cur = g.dataset.g; });
   sec.classList.toggle('stuck', !!bar && bar.getBoundingClientRect().top <= 0.5 && sec.getBoundingClientRect().top < 0);
-  sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('on')) { b.classList.toggle('on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
+  sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('chip--on')) { b.classList.toggle('chip--on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
 addEventListener('scroll', () => { cancelAnimationFrame(shpRaf); shpRaf = requestAnimationFrame(shpSpy); }, { passive: true });
 function renderEmpty(wrap) {
   const picks = picksForEmpty(), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
@@ -457,13 +454,13 @@ function renderEmpty(wrap) {
   wrap.insertAdjacentHTML('beforeend', `<div class="empty"><div class="c">
       <div class="eart" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="58" class="ea-bg"/><path class="ea-ln" d="M30 50h60l-6 34a6 6 0 0 1-6 5H42a6 6 0 0 1-6-5z"/><path class="ea-ln" d="M46 50l10-18M74 50L64 32"/><path class="ea-ln ea-dash" d="M44 64h32M47 75h26"/><circle cx="90" cy="34" r="7" class="ea-dot"/></svg></div>
       <h2>Lista jest pusta</h2><p>Nie masz jeszcze żadnych produktów. Przytrzymaj zielony przycisk i powiedz, czego potrzebujesz.</p></div></div>
-    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? ` <span class="pill">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>
+    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--sm chip--tile" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? ` <span class="badge badge--promo">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>
     <section class="sec ex"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
   wireAdds(wrap); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
   const close = sheet(`<div class="warn"><span class="wi">${ic('trash', 2)}</span><h3>Wyczyścić całą listę?</h3>
       <p>Usuniesz wszystkie ${n} ${plural(n, 'pozycję', 'pozycje', 'pozycji')}, także te jeszcze niekupione. Lista zniknie też u pozostałych osób, z którymi ją dzielisz.</p>
-      <div class="wb"><button type="button" class="ghost" data-a="keep">Zostaw</button><button type="button" class="danger" data-a="wipe">Wyczyść listę</button></div></div>`, sh => {
+      <div class="wb"><button type="button" class="btn btn--soft btn--lg" data-a="keep">Zostaw</button><button type="button" class="btn btn--danger btn--lg" data-a="wipe">Wyczyść listę</button></div></div>`, sh => {
     sh.querySelector('[data-a=keep]').onclick = () => close();
     sh.querySelector('[data-a=wipe]').onclick = () => { all.forEach(i => put('items', { ...i, deleted: true }, true)); lit.clear(); vib(20); close(); render(); compareSoon();
       undoBar(`<b>Wyczyszczono:</b> ${n} ${plural(n, 'pozycja', 'pozycje', 'pozycji')}`, () => { all.forEach(i => { const cur = C.items[i.id]; if (cur) put('items', { ...cur, deleted: false }, true); }); render(); compareSoon(); toast('Lista wróciła'); }); };
@@ -473,8 +470,8 @@ function renderChips() {
   const { promo, due, freq } = suggestions(); let i = 0;
   const key = [...promo.map(x => x.h.id + x.p.price), ...due.map(h => h.id), ...freq.map(h => h.id)].join('|'); if (key === chipsKey) return; chipsKey = key;
   if (!key) { el.innerHTML = ''; el.hidden = true; return; } el.hidden = false;
-  const chip = (h, extra) => `<button class="chip" data-h="${esc(h.id)}" style="--i:${i++};--tile:var(--t-${h.cat})"><span class="e">${esc(h.emoji || emojiGuess(h.name) || CAT_EMOJI[h.cat] || '•')}</span>${esc(h.name)}${extra || ''}</button>`;
-  el.innerHTML = '<span class="lbl">Może też</span>' + promo.map(({ h, p }) => chip(h, ` <span class="pill">${pct(p) || zl(p.price)}</span>`)).join('') + due.map(h => chip(h)).join('') + freq.map(h => chip(h)).join('');
+  const chip = (h, extra) => `<button class="chip chip--sm chip--tile" data-h="${esc(h.id)}" style="--i:${i++};--tile:var(--t-${h.cat})"><span class="e">${esc(h.emoji || emojiGuess(h.name) || CAT_EMOJI[h.cat] || '•')}</span>${esc(h.name)}${extra || ''}</button>`;
+  el.innerHTML = '<span class="lbl">Może też</span>' + promo.map(({ h, p }) => chip(h, ` <span class="badge badge--promo">${pct(p) || zl(p.price)}</span>`)).join('') + due.map(h => chip(h)).join('') + freq.map(h => chip(h)).join('');
   el.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { const h = C.history[b.dataset.h]; if (h) { const added = addItems([{ name: h.name, category: h.cat, emoji: h.emoji }]); vib(8); if (added.length) snack(added, h.name); } }); }
 
 // ---------- sheets: the order of the aisles, the offers, the menu ----------
@@ -497,23 +494,29 @@ function dragOrder(box, done) {   // (drag a row by its handle; the others make 
     const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); rows.forEach(r => { r.style.transform = ''; }); row.classList.remove('lift');
       if (to !== i0) { rows.splice(i0, 1); rows.splice(to, 0, row); rows.forEach(r => box.appendChild(r)); done(rows.map(r => r.dataset.c)); vib(8); } };
     g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); })); }
+// (the comparison: your shops, the cheapest first; a shop opens its breakdown)
+function compareSheet() { const total = openItems().length, ms = MY(), hit = ms.filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), none = ms.filter(x => !(CMP[x.id] && CMP[x.id].n));
+  sheet(`<h3>Gdzie dziś taniej</h3><p class="sub">Obniżki z gazetek na to, co masz jeszcze do kupienia. Dotknij sklepu, żeby zobaczyć produkty i warunki.</p>
+    <div class="cmpl">${hit.map((x, i) => `<button type="button" class="cmpr" data-cmp="${x.id}" style="--sc:${x.color}"><i></i><span class="cmpn"><b>${esc(x.name)}${i === 0 ? ' <span class="badge badge--promo badge--pill">najtaniej</span>' : ''}</b><small>${CMP[x.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} w promocji</small></span><span class="cmps">−${zl(CMP[x.id].save)}</span>${ic('chev', 2)}</button>`).join('')}
+    ${none.map(x => `<div class="cmpr off" style="--sc:${x.color}"><i></i><span class="cmpn"><b>${esc(x.name)}</b><small>brak obniżek na Twoje produkty</small></span></div>`).join('')}</div>
+    <p class="hint">Liczymy tylko obniżki z przekreśloną ceną. Pełnego kosztu zakupów nie podajemy, bo sklepy nie publikują zwykłych cen.</p>`, sh => sh.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => dealsSheet(b.dataset.cmp))); }
 function dealsSheet(id) { const D = CMP[id]; if (!D || !D.n) return; const total = openItems().length, sh0 = storeOf(id);
   const byName = n => openItems().find(i => i.name === n) || { name: n, cat: 'dom' };
   const close = sheet(`<h3>Taniej w ${esc(IN[id] || sh0.name)}</h3><p class="sub">${D.n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z Twojej listy w promocji. Razem około ${zl(D.save)} mniej.</p>
     <div class="dls">${D.hits.map(({ item, o }) => { const it = byName(item), save = o.oldPrice - o.price; return `<div class="dl">
-      <div class="dlh"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="dli"><small>Z Twojej listy</small><b>${esc(item)}</b></span><span class="dlp"><span class="kbs r">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span></div>
+      <div class="dlh"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="dli"><small>Z Twojej listy</small><b>${esc(item)}</b></span><span class="dlp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span></div>
       <div class="dlo">${esc(o.name)}</div>${o.detail && o.detail !== o.name ? `<div class="dld">${esc(o.detail)}</div>` : ''}
       ${termsHtml(o)}
       ${o.multi > 1 ? `<p class="dlw">Cena promocyjna przy zakupie ${o.multi} szt. Za jedną sztukę zapłacisz zwykłą cenę.</p>` : ''}
       <p class="dls2">Oszczędzasz ${zl(save)}${o.multi > 1 ? ' na sztuce' : ''} · do ${dm(o.until)}</p></div>`; }).join('')}</div>
-    ${id !== store() ? `<div class="pcb"><button type="button" class="ok" data-go>Ułóż listę pod ${esc(sh0.thru || sh0.name)}</button></div>` : ''}`, sh => {
+    ${id !== store() ? `<div class="pcb"><button type="button" class="btn btn--primary btn--lg btn--block ok" data-go>Ułóż listę pod ${esc(sh0.thru || sh0.name)}</button></div>` : ''}`, sh => {
     const g = sh.querySelector('[data-go]'); if (g) g.onclick = () => { put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); close(); vib(6); }; }); }
 function offersSheet(it) { const s = storeOf(store()), offs = PR[it.name] || [], d = x => `${x.slice(8, 10)}.${x.slice(5, 7)}`;
-  sheet(`<h3>${esc(it.name)} taniej</h3><div class="list">${offs.map(o => `<div class="off"><div>${esc(o.name)}<small>${s.name} · ${d(o.from)} – ${d(o.until)}</small>${termsHtml(o)}${o.detail ? `<small class="odet">${esc(o.detail)}</small>` : ''}</div><div class="r"><span class="kbs r">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</div></div>`).join('')}</div><p class="hint">Ceny z gazetek promocyjnych (ding.pl). Sprawdź warunki w sklepie, np. aplikację albo kupno kilku sztuk.</p>`); }
+  sheet(`<h3>${esc(it.name)} taniej</h3><div class="list">${offs.map(o => `<div class="off"><div>${esc(o.name)}<small>${s.name} · ${d(o.from)} – ${d(o.until)}</small>${termsHtml(o)}${o.detail ? `<small class="odet">${esc(o.detail)}</small>` : ''}</div><div class="r"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o)}</span><b>${zl(o.price)}${perUnit(o)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</div></div>`).join('')}</div><p class="hint">Ceny z gazetek promocyjnych (ding.pl). Sprawdź warunki w sklepie, np. aplikację albo kupno kilku sztuk.</p>`); }
 // ---------- the dictation dictionary: what I say → how it is written ----------
 function wordsSheet() { const mine = Object.entries(myAliases()).sort((a, b) => a[0].localeCompare(b[0], 'pl')), n = Object.keys(CAT.aliases || {}).length;
   const close = sheet(`<h3>Słownik dyktowania</h3><p class="sub">Gdy powiesz słowo po lewej, na liście pojawi się to po prawej. Uczy się też samo: popraw dodany produkt przyciskiem „Zmień”.</p>
-    <form class="wadd" id="wadd"><input name="a" placeholder="Mówię…" autocomplete="off" aria-label="Mówię"><span class="ar">→</span><input name="b" placeholder="Zapisz jako…" autocomplete="off" aria-label="Zapisz jako"><button type="submit" aria-label="Dodaj do słownika">${ic('plus', 2.2)}</button></form>
+    <form class="wadd" id="wadd"><input class="input" name="a" placeholder="Mówię…" autocomplete="off" aria-label="Mówię"><span class="ar">→</span><input class="input" name="b" placeholder="Zapisz jako…" autocomplete="off" aria-label="Zapisz jako"><button type="submit" aria-label="Dodaj do słownika">${ic('plus', 2.2)}</button></form>
     <div class="wl">${mine.length ? mine.map(([a, b]) => `<div class="wr"><span class="wa">${esc(a)}</span><span class="ar">→</span><b>${esc(b)}</b><button type="button" data-w="${esc(a)}" aria-label="Usuń: ${esc(a)}">${ic('x', 2)}</button></div>`).join('') : '<p class="wnone">Jeszcze nic swojego. Dodaj parę powyżej albo popraw produkt po dyktowaniu.</p>'}</div>
     <p class="hint">Wbudowanych jest ${n} popularnych zapisów, np. łyski → whisky, keczup → ketchup, mocarella → mozzarella.</p>`, sh => {
     sh.querySelector('#wadd').onsubmit = e => { e.preventDefault(); const f = e.target; if (addAlias(f.a.value, f.b.value)) { vib(8); close(); setTimeout(wordsSheet, 380); } else f.a.focus(); };
@@ -571,14 +574,15 @@ function renderPin() {
 let storesKey = '';
 function renderStores() { const cur = store(), cs = MY().filter(x => CMP[x.id] && CMP[x.id].n), best = cs.sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0];
   const key = myIds().join(',') + '|' + cur + '|' + (best ? best.id + CMP[best.id].save : ''); if (key === storesKey) return; storesKey = key;
-  const el = $('#stbs'); el.innerHTML = MY().map(x => `<button class="stb${x.id === cur ? ' on' : ''}" type="button" data-s="${x.id}" style="--sc:${x.color}"><span class="sn"><span class="d"></span>${esc(x.name)}</span>${best && best.id === x.id && CMP[x.id].save > 0 ? '<small class="cheap">najtaniej</small>' : ''}</button>`).join('');
+  const el = $('#stbs'); el.innerHTML = MY().map(x => `<button class="chip stb${x.id === cur ? ' chip--on' : ''}" type="button" data-s="${x.id}" style="--sc:${x.color}" aria-pressed="${x.id === cur}"><span class="dot"></span>${esc(x.name)}${best && best.id === x.id && CMP[x.id].save > 0 ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''}</button>`).join('') + `<button class="ibtn ibtn--secondary ibtn--lg addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button>`;
+  el.querySelector('.addSt').onclick = storesSheet;
   el.querySelectorAll('.stb').forEach(b => b.onclick = () => { if (b.dataset.s === store()) return; put('settings', { id: 'store', value: b.dataset.s }); PR = {}; prKey = ''; promosSoon(); vib(6); });
-  const on = el.querySelector('.stb.on'); if (on && el.scrollWidth > el.clientWidth) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  const on = el.querySelector('.stb.chip--on'); if (on && el.scrollWidth > el.clientWidth) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   const edge = () => el.classList.toggle('more', el.scrollLeft + el.clientWidth < el.scrollWidth - 4); el.onscroll = edge; edge(); }
 // (pick your shops; the family sees the same ones)
 function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(id)), ...CAT.stores.filter(x => !mine.includes(x.id))];
   const close = sheet(`<h3>Moje sklepy</h3><p class="sub">Wybierz sieci, w których robisz zakupy. Ich gazetki trafią do promocji i porównania. Ustawienie jest wspólne dla całej rodziny.</p>
-    <div class="slist">${all.map(x => `<label class="srow" style="--sc:${x.color}"><i></i><span>${esc(x.name)}</span><input type="checkbox" data-id="${x.id}" ${mine.includes(x.id) ? 'checked' : ''}><b class="sw" aria-hidden="true"></b></label>`).join('')}</div>
+    <div class="slist">${all.map(x => `<label class="srow" style="--sc:${x.color}"><i></i><span>${esc(x.name)}</span><input type="checkbox" data-id="${x.id}" ${mine.includes(x.id) ? 'checked' : ''}><b class="switch" aria-hidden="true"></b></label>`).join('')}</div>
     <p class="hint">Gazetki pochodzą z ding.pl. Kolejność działów ustawisz osobno dla każdego sklepu.</p>`, sh => sh.querySelectorAll('[data-id]').forEach(cb => cb.onchange = () => {
       const now = [...sh.querySelectorAll('[data-id]:checked')].map(x => x.dataset.id);
       if (!now.length) { cb.checked = true; toast('Zostaw przynajmniej jeden sklep'); return; }
@@ -588,18 +592,17 @@ let mounted = false;
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
     <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
-      <button class="gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
-      <button class="round" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
-    <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div><button class="addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button><button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
+      <button class="btn btn--secondary gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
+      <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
+    <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="chips" id="chips" hidden></div>
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
-      <button class="mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
+      <button class="ibtn ibtn--primary ibtn--xl mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
-    <div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+    <div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
   addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
-  $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet; document.querySelector('.ordBtn').onclick = orderSheet;
-  document.querySelector('.addSt').onclick = storesSheet;
+  $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet;
   $('#f').onclick = () => openAdder();
   const aq = $('#adQ'); aq.oninput = () => { if (!aq.value.trim()) editFrom = null; adderRender(); };
   $('#adF').onsubmit = e => { e.preventDefault(); submitText(aq.value); };
@@ -617,7 +620,7 @@ function render() {
   if (!mounted) { mount(); heroKey = ''; }
   const s = storeOf(store()), all = Object.values(C.items).filter(i => !i.deleted), n = all.filter(i => !i.done).length;
   renderStores();
-  $('#menuBtn').classList.toggle('off', !online);
+  $('#menuBtn').classList.toggle('dot', !online);
   const day = ['w niedzielę', 'w poniedziałek', 'we wtorek', 'w środę', 'w czwartek', 'w piątek', 'w sobotę'][new Date().getDay()];
   const h1 = !all.length ? `Co kupujemy<br><mark>${day}?</mark>` : n ? `Do kupienia<br><mark>${n} ${plural(n, 'rzecz', 'rzeczy', 'rzeczy')}</mark>` : 'Wszystko<br><mark>w koszyku</mark>';
   if (h1 !== heroKey) { heroKey = h1; $('#h1').innerHTML = h1; }
