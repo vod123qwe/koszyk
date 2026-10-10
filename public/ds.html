@@ -59,6 +59,17 @@
   <section><h2>Tile</h2><p class="lead">Kwadratowy skrót: jedna informacja i jedno wejście. Ink = ciemny, brand = nasza zieleń, quiet = brak danych.</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);max-width:420px"><button class="tile tile--ink"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">Biedronka</span><span class="tile__meta">−40,84 zł<small>na 3 z 4 produktów z listy</small></span><span class="tile__go">Porównaj sklepy ›</span></button><button class="tile tile--brand"><span class="tile__label">Gazetka</span><span class="tile__title">Lidl</span><span class="tile__meta">38<small>promocji · do −57%</small></span><span class="tile__go">Przeglądaj ›</span></button></div></section>
 
+  <section><h2>Switcher</h2><p class="lead">Jeden wybór z kilku w pigułce ‹ nazwa ›. Strzałki albo przeciągnięcie palcem (gumka, sprężyna) zmieniają opcję, dotknięcie nazwy rozwija listę (pigułka rośnie w panel). Zachowanie: <code>ds/switcher.js</code>, przeniesione z pigułki wariantów w labie.</p>
+    <div class="swhost" style="position:relative;display:flex;padding-top:14px;min-height:280px"><div class="switcher" id="demoSw"><button class="sw-arrow" id="dP" aria-label="Poprzedni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button><span class="sw-name" id="dN"></span><button class="sw-arrow" id="dX" aria-label="Następny"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button></div></div></section>
+  <script type="module">
+    import { switcher } from '/ds/switcher.js';
+    const S = [['Lidl', '#0050aa'], ['Biedronka', '#e30613'], ['Kaufland', '#e30613']]; let i = 0; const n = document.getElementById('dN');
+    const paint = () => { n.style.setProperty('--sc', S[i][1]); n.innerHTML = '<i class="dot"></i>' + S[i][0] + (i === 1 ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''); }; paint();
+    switcher(document.getElementById('demoSw'), { prev: document.getElementById('dP'), next: document.getElementById('dX'), name: n, onStep: d => { i = (i + d + S.length) % S.length; paint(); },
+      items: () => S.map((s, k) => ({ id: k, selected: k === i, html: '<span class="sw-o" style="--sc:' + s[1] + '"><i class="dot"></i>' + s[0] + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' })),
+      onPick: k => { i = k; paint(); } });
+  </script>
+
   <section><h2>Switch i Input</h2><p class="lead">Przełącznik (np. „Moje sklepy”) i pole tekstowe.</p>
     <div class="row"><label style="display:flex;align-items:center;gap:12px"><input type="checkbox" checked style="position:absolute;opacity:0"><b class="switch"></b> Lidl</label><label style="display:flex;align-items:center;gap:12px"><input type="checkbox" style="position:absolute;opacity:0"><b class="switch"></b> Auchan</label></div>
     <div class="row" style="max-width:420px"><input class="input" placeholder="Wpisz produkt, np. mleko 2 litry"></div></section>

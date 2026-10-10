@@ -22,6 +22,7 @@ Apka stoi na małym design systemie. Zasada: **elementy są naczyniami połączo
 | Banner | `banner` z `__icon`, `__text`, `__action` | „N produktów taniej” |
 | Tile | `tile` + `--ink` / `--brand` / `--quiet`, części `__label`, `__title`, `__meta`, `__go` | kafle „Najtaniej dziś” i „Gazetka” |
 | Offer | `offer` (+ `--flat`), części `__media`, `__name`, `__meta`, `__price`, `__action`; warunki w `.terms` | zamienniki, rozpiska sklepu, arkusz produktu |
+| Switcher | `switcher` + `sw-arrow`, `sw-name`; zachowanie `ds/switcher.js` | wybór sklepu u góry |
 | Card | `card` | grupowane powierzchnie |
 | Switch | `switch` (po ukrytym checkboxie) | Moje sklepy |
 | Input | `input` | dopisywanie, słownik |

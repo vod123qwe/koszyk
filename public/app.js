@@ -1,6 +1,7 @@
 // Koszyk: lista zakupów. Dyktujesz (przytrzymaj mikrofon), serwer rozumie tekst (Claude albo prosty parser), produkty układają się
 // po działach w kolejności Twojego sklepu; kolejność uczy się z tego, jak odhaczasz. Wspólna lista: zmiany idą na serwer i wracają do
 // drugiego telefonu po kilku sekundach. Promocje produktów z listy w wybranej sieci, podpowiedzi „Może też?”.
+import { switcher } from './ds/switcher.js?v=2';
 const CAT = await (await fetch('/catalog.json')).json();
 const CATS = Object.fromEntries(CAT.categories.map(c => [c.id, c]));
 const $ = (s, r = document) => r.querySelector(s);
@@ -649,13 +650,19 @@ function renderPin() {
 
 // ---------- the page ----------
 let storesKey = '';
-function renderStores() { const cur = store(), cs = MY().filter(x => CMP[x.id] && CMP[x.id].n), best = cs.sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0];
-  const key = myIds().join(',') + '|' + cur + '|' + (best ? best.id + CMP[best.id].save : ''); if (key === storesKey) return; storesKey = key;
-  const el = $('#stbs'); el.innerHTML = MY().map(x => `<button class="chip stb${x.id === cur ? ' chip--on' : ''}" type="button" data-s="${x.id}" style="--sc:${x.color}" aria-pressed="${x.id === cur}"><span class="dot"></span>${esc(x.name)}${best && best.id === x.id && CMP[x.id].save > 0 ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''}</button>`).join('') + `<button class="ibtn ibtn--secondary ibtn--lg addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button>`;
-  el.querySelector('.addSt').onclick = storesSheet;
-  el.querySelectorAll('.stb').forEach(b => b.onclick = () => { if (b.dataset.s === store()) return; put('settings', { id: 'store', value: b.dataset.s }); PR = {}; prKey = ''; promosSoon(); vib(6); });
-  const on = el.querySelector('.stb.chip--on'); if (on && el.scrollWidth > el.clientWidth) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
-  const edge = () => el.classList.toggle('more', el.scrollLeft + el.clientWidth < el.scrollWidth - 4); el.onscroll = edge; edge(); }
+// (the shop: one switcher, ‹ Biedronka ›; swipe or the arrows step through your shops, a tap on the name opens them all)
+let storeSw = null;
+const cheapest = () => { const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n && CMP[x.id].save > 0).sort((a, b) => CMP[b.id].save - CMP[a.id].save); return cs[0] ? cs[0].id : null; };
+function setStore(id) { if (id === store()) return; put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); vib(6); }
+function renderStores() { const cur = storeOf(store()), best = cheapest(), el = $('#swName'); if (!el) return;
+  const key = myIds().join(',') + '|' + cur.id + '|' + best; if (key === storesKey) return; storesKey = key;
+  el.style.setProperty('--sc', cur.color); el.innerHTML = `<i class="dot"></i>${esc(cur.name)}${best === cur.id ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''}`;
+  if (storeSw) return;
+  storeSw = switcher($('#storeSw'), { prev: $('#swPrev'), next: $('#swNext'), name: el,
+    onStep: d => { const ids = myIds(), i = ids.indexOf(store()); setStore(ids[(i + d + ids.length) % ids.length]); },
+    items: () => { const b0 = cheapest(); return MY().map(x => ({ id: x.id, selected: x.id === store(), html: `<span class="sw-o" style="--sc:${x.color}"><i class="dot"></i>${esc(x.name)}${x.id === b0 ? ' <span class="badge badge--promo badge--pill">najtaniej</span>' : ''}</span>${CMP[x.id] && CMP[x.id].save > 0 ? `<small>−${zl(CMP[x.id].save)}</small>` : ''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` })); },
+    onPick: id => setStore(id),
+    footer: { html: `<span class="sw-o">${ic('plus', 2)}Moje sklepy…</span>`, onClick: () => storesSheet() } }); }
 // (pick your shops; the family sees the same ones)
 function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(id)), ...CAT.stores.filter(x => !mine.includes(x.id))];
   const close = sheet(`<h3>Moje sklepy</h3><p class="sub">Wybierz sieci, w których robisz zakupy. Ich gazetki trafią do promocji i porównania. Ustawienie jest wspólne dla całej rodziny.</p>
@@ -671,7 +678,7 @@ function mount() {
     <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
       <button class="btn btn--secondary gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
       <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
-    <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div></div></nav>
+    <nav class="stores" aria-label="Sklep"><div class="c"><div class="swhost"><div class="switcher" id="storeSw"><button class="sw-arrow" type="button" id="swPrev" aria-label="Poprzedni sklep">${ic('chev', 2.2)}</button><span class="sw-name" id="swName"></span><button class="sw-arrow" type="button" id="swNext" aria-label="Następny sklep">${ic('chev', 2.2)}</button></div></div></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="pblur" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chips" id="chips" hidden></div>
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
