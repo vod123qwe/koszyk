@@ -285,3 +285,29 @@ svg { display: block; }
 .lsearch:focus-within { box-shadow: inset 0 0 0 1.6px var(--cta); }
 .leaf [hidden] { display: none !important; }
 .snack [hidden] { display: none !important; }
+
+/* "Gazetki": the header pill, the shop picker, tabs and aisle shortcuts */
+.gzb { display: flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px 0 13px; border-radius: 999px; box-shadow: inset 0 0 0 1.4px var(--line); font-size: 14px; font-weight: 600; color: var(--ink); transition: background .2s, transform .15s; }
+.gzb:hover { background: var(--soft); } .gzb:active { transform: scale(.96); } .gzb svg { width: 19px; height: 19px; }
+@media (max-width: 360px) { .gzb span { display: none; } .gzb { padding: 0 11px; } }
+.lrows { border-top: 1px solid var(--line); }
+.lrow { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 10px 16px 10px 20px; border-bottom: 1px solid var(--line); text-align: left; transition: background .2s; }
+.lrow:hover { background: var(--soft); } .lrow:disabled { opacity: .55; }
+.lrow > i { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--sc); }
+.lrow .ln { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; } .lrow .ln b { font-size: 17px; font-weight: 600; } .lrow .ln small { font-size: 13px; color: var(--muted); }
+.lrow > svg { width: 18px; height: 18px; color: var(--faint); }
+.ltabs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 20px 6px; padding: 4px; border-radius: 14px; background: var(--soft); }
+.ltabs button { display: flex; align-items: center; justify-content: center; gap: 7px; height: 38px; border-radius: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); transition: background .25s, color .25s, box-shadow .25s; }
+.ltabs button i { width: 7px; height: 7px; border-radius: 50%; background: var(--sc); } .ltabs button small { font-size: 11px; font-weight: 600; opacity: .7; }
+.ltabs button[aria-selected=true] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 3px rgba(41,41,61,.12); }
+.lcats { display: flex; gap: 7px; overflow-x: auto; padding: 0 20px 12px; scrollbar-width: none; }
+.lcats button { flex: none; height: 34px; padding: 0 12px; border-radius: 999px; background: var(--tile, var(--soft)); font-size: 13px; font-weight: 550; white-space: nowrap; }
+.lcats button small { margin-left: 2px; font-size: 11px; opacity: .6; }
+
+/* "Gdzie dziś taniej": a closed grey box, set apart from the list */
+.cmp { margin: 40px 16px 8px; border-radius: 20px; background: var(--soft); overflow: hidden; }
+.cmp .h { border-bottom-color: color-mix(in srgb, var(--ink) 8%, var(--soft)); } .cmp .lead { border-bottom-color: color-mix(in srgb, var(--ink) 8%, var(--soft)); }
+.cmp .grid { border-bottom: 0; } .cmp .cell { border-right-color: color-mix(in srgb, var(--ink) 8%, var(--soft)); }
+.cmp .note { padding: 4px 20px 18px; }
+@media (min-width: 672px) { .cmp { max-width: calc(var(--w) - 32px); margin-left: auto; margin-right: auto; } }
+.cmp .cell b { font-size: 19px; white-space: nowrap; } .cmp .cell { padding-left: 16px; padding-right: 10px; }

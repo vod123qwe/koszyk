@@ -38,6 +38,7 @@ const I = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/>',
   back: '<path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  paper: '<path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2M8.5 8h4.5M8.5 11.5h4.5M8.5 15h3"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] || I.box}</svg>`;
@@ -293,18 +294,38 @@ function picksForEmpty() { const hs = mine().slice(0, 10).map(h => ({ name: h.na
   for (const [name, cat] of STAPLES) { if (hs.length >= 12) break; if (!hs.some(h => norm(h.name) === norm(name))) hs.push({ name, cat }); }
   return hs; }
 async function loadShopPromos() { if (epBusy || Date.now() - epAt < 30 * 60e3) return; epBusy = true;
-  await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/leaflet', { store: s.id }); EP[s.id] = r.items || []; } catch { EP[s.id] = EP[s.id] || null; } }));
+  await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/leaflet', { store: s.id }), best = {};
+    // (one row per product name: the deeper cut wins)
+    for (const o of r.items || []) { const k = norm(o.name); if (!best[k] || offPct(o) > offPct(best[k]) || (offPct(o) === offPct(best[k]) && o.price < best[k].price)) best[k] = o; }
+    EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
   epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
 const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en">${esc(o.name)}</span><span class="dp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
 const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
   if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
 // (the whole leaflet in a sheet, by aisle in this shop's order; adding keeps it open)
+const dm = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
+// (when the leaflet runs: the most common last day, and the earliest start)
+function leafDates(l) { if (!l || !l.length) return ''; const c = {}; l.forEach(o => c[o.until] = (c[o.until] || 0) + 1);
+  const until = Object.keys(c).sort((a, b) => c[b] - c[a])[0], from = l.map(o => o.from).sort()[0];
+  return from && from > new Date().toISOString().slice(0, 10) ? `od ${dm(from)} do ${dm(until)}` : `do ${dm(until)}`; }
+// (the leaflets of all three shops: pick one to open)
+function leafletsSheet() { loadShopPromos();
+  const row = st => { const l = EP[st.id], best = l && l.length ? Math.max(...l.map(o => Math.round(offPct(o) * 100))) : 0;
+    return `<button class="lrow" type="button" data-open="${st.id}" style="--sc:${st.color}" ${l && l.length ? '' : 'disabled'}><i></i><span class="ln"><b>${esc(st.name)}</b><small>${l === undefined ? 'Wczytuję…' : !l ? 'Nie udało się pobrać' : !l.length ? 'Brak promocji spożywczych' : `${l.length} ${plural(l.length, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`}</small></span>${best ? `<span class="pill">do −${best}%</span>` : ''}${ic('chev', 2)}</button>`; };
+  const close = sheet(`<h3>Gazetki</h3><p class="sub">Promocje spożywcze i drogeryjne z gazetek sieci w tym tygodniu. Wybierz sklep, żeby przejrzeć całą listę po działach.</p>
+    <div class="lrows">${CAT.stores.map(row).join('')}</div>`, sh => sh.querySelectorAll('[data-open]').forEach(b => b.onclick = () => leafletSheet(b.dataset.open)));
+  if (CAT.stores.some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
 function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
   for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
-  sheet(`<h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} spożywczych i drogeryjnych w tym tygodniu. Dotknij, żeby dopisać do listy.</p>
+  const cats = order.filter(c => by[c]);
+  sheet(`<div class="ltabs" role="tablist">${CAT.stores.map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
+    <h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} ${leafDates(l)}. Dotknij, żeby dopisać do listy.</p>
+    <div class="lcats">${cats.map(c => `<button type="button" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
     <label class="lsearch">${ic('search', 2)}<input type="search" placeholder="Szukaj w gazetce…" autocomplete="off" aria-label="Szukaj w gazetce"></label>
-    <div class="leaf">${order.filter(c => by[c]).map(c => `<section class="lg"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}<p class="wnone lnone" hidden>Nic takiego w tej gazetce.</p></div>`, sh => { wireAdds(sh, true);
+    <div class="leaf">${cats.map(c => `<section class="lg" data-cat="${c}"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}<p class="wnone lnone" hidden>Nic takiego w tej gazetce.</p></div>`, sh => { wireAdds(sh, true);
+    sh.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (b.dataset.tab !== id) leafletSheet(b.dataset.tab); });
+    sh.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const g = sh.querySelector(`.lg[data-cat="${b.dataset.jump}"]`); if (g) sh.scrollTo({ top: g.offsetTop - 8, behavior: 'smooth' }); });
     // (filter as you type; empty aisles fold away)
     const inp = sh.querySelector('.lsearch input'); inp.oninput = () => { const q = norm(inp.value); let any = 0;
       sh.querySelectorAll('.lg').forEach(g => { let n = 0; g.querySelectorAll('.ep').forEach(b => { const on = !q || norm(b.dataset.add).includes(q); b.hidden = !on; n += on; }); g.hidden = !n; any += n; });
@@ -429,6 +450,7 @@ let mounted = false;
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
     <header class="top"><div class="c">${LOGO}<span class="tag"><i></i><span>Lista<br>zakupów</span></span><span class="sp"></span>
+      <button class="gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
       <button class="round" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></header>
     <section class="hero"><div class="c"><h1 id="h1"></h1><p id="lead"></p></div></section>
     <nav class="stores" aria-label="Sklep"><div class="c">${CAT.stores.map(s => `<button class="stb" type="button" data-s="${s.id}" style="--sc:${s.color}"><span class="d"></span>${s.name}</button>`).join('')}<button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
@@ -438,7 +460,7 @@ function mount() {
       <button class="mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
     <div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
-  $('#menuBtn').onclick = menuSheet; document.querySelector('.ordBtn').onclick = orderSheet;
+  $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet; document.querySelector('.ordBtn').onclick = orderSheet;
   document.querySelectorAll('.stb').forEach(b => b.onclick = () => { if (b.dataset.s === store()) return; put('settings', { id: 'store', value: b.dataset.s }); PR = {}; prKey = ''; promosSoon(); vib(6); });
   const q = $('#q'), f = $('#f'); q.oninput = () => f.classList.toggle('has', !!q.value.trim());
   f.onsubmit = e => { e.preventDefault(); const t = q.value; q.value = ''; f.classList.remove('has');
