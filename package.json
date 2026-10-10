@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "description": "Koszyk - wspolna lista zakupow z dyktowaniem, ukladem sklepu i promocjami",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" },
-  "dependencies": { "@anthropic-ai/sdk": "^0.116.0" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test --test-reporter=dot \"tests/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0"
+  }
 }
