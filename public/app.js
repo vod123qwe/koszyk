@@ -184,7 +184,7 @@ function addItems(list, removes = []) {
   const gone = []; for (const r of removes) { const ex = open.find(o => !o.deleted && !gone.includes(o.name) && (norm(o.name).includes(norm(r)) || norm(r).includes(norm(o.name)))); if (ex) { put('items', { ...ex, deleted: true }, true); gone.push(ex.name); } }
   added.removed = gone; added.dupes = dupes;
   render(); promosSoon(); compareSoon(); setTimeout(() => newIds.clear(), 1200); setTimeout(() => { const t = Date.now(); lit.forEach((at, id) => t - at > 4400 && lit.delete(id)); }, 4500);
-  const firstId = added[0] ? added[0].id : dupes.length ? (open.find(o => o.name === dupes[0]) || {}).id : null, first = firstId && document.querySelector(`.row[data-id="${firstId}"]`); if (first) { const r = first.getBoundingClientRect(), dock = $('.dock')?.getBoundingClientRect().top ?? innerHeight; if (r.top < 70 || r.bottom > dock) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  const firstId = added[0] ? added[0].id : dupes.length ? (open.find(o => o.name === dupes[0]) || {}).id : null; if (firstId) { focusRow = { id: firstId, until: Date.now() + 2500 }; if (!adderOpen) showFocus(true); }
   return added; }
 async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
@@ -230,7 +230,7 @@ function openAdder(prefill = '') { const el = adderEl(), q = $('#adQ'); if (!el)
   adderOpen = true; el.hidden = false; requestAnimationFrame(() => el.classList.add('show'));
   q.value = prefill; q.focus(); if (prefill) q.setSelectionRange(prefill.length, prefill.length);
   fitAdder(); adderRender(); }
-function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
+function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; if (focusRow) { focusRow.until = Date.now() + 2500; setTimeout(() => showFocus(true), 380); } editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
 // (iOS keeps the layout height when the keyboard is up: follow the visible part of the screen instead)
 function fitAdder() { const vv = window.visualViewport, el = adderEl(); if (!el) return; el.style.setProperty('--vvh', (vv ? vv.height : innerHeight) + 'px'); el.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px'); }
 if (window.visualViewport) { visualViewport.addEventListener('resize', () => adderOpen && fitAdder()); visualViewport.addEventListener('scroll', () => adderOpen && fitAdder()); }
@@ -335,7 +335,18 @@ function rowEl(it) {
   const pb = row.querySelector('[data-promo]'); if (pb) pb.onclick = () => offersSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
-function renderList() {
+// ---------- keeping the page still: a rebuilt list keeps its height and scroll; the row you just added stays in view ----------
+let focusRow = null;
+function showFocus(smooth) { if (!focusRow || Date.now() > focusRow.until) { focusRow = null; return; }
+  const row = document.querySelector(`.row[data-id="${focusRow.id}"]`); if (!row) return;
+  const r = row.getBoundingClientRect(), dock = $('.dock') ? $('.dock').getBoundingClientRect().top : innerHeight;
+  if (r.top >= 16 && r.bottom <= dock - 8) return;   // (already visible: leave the page alone)
+  scrollTo({ top: Math.max(0, r.top + scrollY - (dock - r.height) / 2), behavior: smooth ? 'smooth' : 'auto' }); }
+function renderList() { const wrap = $('#list'), y = scrollY; wrap.style.minHeight = wrap.offsetHeight + 'px';
+  try { buildList(); } finally { wrap.style.minHeight = ''; }
+  if (Math.abs(scrollY - y) > 1) scrollTo(0, y);
+  if (focusRow) showFocus(false); }
+function buildList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
