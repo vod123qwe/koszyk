@@ -368,8 +368,8 @@ const mine = () => Object.values(C.history).filter(looksLikeProduct).sort((a, b)
 const leafHit = (name, cat) => (EP[store()] || []).find(o => offerFits(o.name, name) && (!cat || cat === 'dom' || !o.cat || o.cat === 'dom' || o.cat === cat));
 const offPct = o => o.oldPrice ? 1 - o.price / o.oldPrice : 0;
 // (the order: what you buy, then the deepest cuts, then plain leaflet prices)
-function rankLeaf(list) { const my = mine().slice(0, 30).map(h => h.name);
-  const score = o => (my.some(n => offerFits(o.name, n)) ? 2 : 0) + (STAPLES.some(s => offerFits(o.name, s[0])) ? .6 : 0) + offPct(o) + (o.oldPrice ? .2 : 0);
+function rankLeaf(list) { const my = mine().slice(0, 30);
+  const score = o => (my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)) ? 2 : 0) + (STAPLES.some(s => offerFits(o.name, s[0])) ? .6 : 0) + offPct(o) + (o.oldPrice ? .2 : 0);
   const seen = new Set(), sorted = list.filter(o => !seen.has(o.name) && seen.add(o.name)).sort((a, b) => score(b) - score(a));
   // (variety up top: at most two from one aisle in a row, the rest wait their turn)
   const top = [], later = [], per = {}; for (const o of sorted) { if ((per[o.cat] || 0) < 2 && top.length < 12) { top.push(o); per[o.cat] = (per[o.cat] || 0) + 1; } else later.push(o); }
@@ -415,14 +415,38 @@ function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(i
       sh.querySelectorAll('.lg').forEach(g => { let n = 0; g.querySelectorAll('.ep').forEach(b => { const on = !q || norm(b.dataset.add).includes(q); b.hidden = !on; n += on; }); g.hidden = !n; any += n; });
       sh.querySelector('.lnone').hidden = !!any; }; }); }
 const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => leafletSheet(b.dataset.all));
-// (under a list in progress: this shop's offers, on grey, one tap to add)
+// (under a list in progress: this shop's offers on grey, by aisle; the header and the aisle pills stick to the top,
+//  a pill takes you to its aisle, "Doczytaj więcej" brings the next ones)
+let shpShown = 14, shpStore = '';
+function shpGroups(id, open) { const ranked = rankLeaf(EP[id] || []).filter(o => !open.some(i => offerFits(o.name, i.name) || norm(i.name) === norm(o.name)));
+  const my = mine().slice(0, 30), mineFits = o => my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)), forMe = ranked.filter(mineFits).slice(0, 6), rest = ranked.filter(o => !forMe.includes(o)), by = {};
+  for (const o of rest) (by[o.cat] = by[o.cat] || []).push(o);
+  return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...orderFor(id).filter(c => by[c]).map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
 function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
-  const rows = rankLeaf(l || []).filter(o => !open.some(i => offerFits(o.name, i.name) || norm(i.name) === norm(o.name))).slice(0, 8);
   if (l && !l.length) return;
-  wrap.insertAdjacentHTML('beforeend', `<section class="shp"><div class="h"><div class="c"><span class="pill">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? l.length : ''}</span></div></div>
-    ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>' : rows.map(epRow).join('') + allBtn(id, l.length)}
-    <p class="note">Najpierw to, co zwykle kupujesz, potem największe obniżki. Dotknij, żeby dopisać do listy.</p></section>`);
-  const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec); }
+  if (shpStore !== id) { shpStore = id; shpShown = 14; }
+  const groups = l ? shpGroups(id, open) : [], total = groups.reduce((n, g) => n + g.items.length, 0);
+  let left = shpShown; const shown = groups.map(g => { const take = Math.max(0, Math.min(g.items.length, left)); left -= take; return { ...g, show: g.items.slice(0, take) }; }).filter(g => g.show.length);
+  wrap.insertAdjacentHTML('beforeend', `<section class="shp" id="shp"><div class="shs"><div class="c shh"><span class="pill">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? total : ''}</span>${l ? `<button type="button" class="shall" data-all="${id}">Gazetka ${ic('chev', 2)}</button>` : ''}</div>
+      ${groups.length ? `<div class="shpills" role="tablist">${groups.map(g => `<button type="button" role="tab" data-go="${g.id}" style="--tile:var(--t-${g.id === 'mine' ? 'warzywa' : g.id})">${esc(g.emoji || '')} ${esc(g.title)} <small>${g.items.length}</small></button>`).join('')}</div>` : ''}</div>
+    ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>'
+      : shown.map(g => `<div class="shg" data-g="${g.id}"><div class="c shgh">${esc(g.title)}<span>${g.items.length}</span></div>${g.show.map(epRow).join('')}</div>`).join('')
+        + (shpShown < total ? `<button type="button" class="shmore">Doczytaj więcej <b>${Math.min(12, total - shpShown)}</b><small>z ${total - shpShown}</small></button>` : '')}
+    <p class="note">Najpierw to, co zwykle kupujesz, potem działy w kolejności sklepu. Dotknij, żeby dopisać do listy.</p></section>`);
+  const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec);
+  const more = sec.querySelector('.shmore'); if (more) more.onclick = () => { shpShown += 12; render(); };
+  sec.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go;
+    // (an aisle not loaded yet comes in first, then we go there)
+    if (!sec.querySelector(`.shg[data-g="${g}"]`)) { let n = 0; for (const x of groups) { if (x.id === g) { shpShown = Math.max(shpShown, n + 8); break; } n += x.items.length; } render(); }
+    const t = $(`#shp .shg[data-g="${g}"]`), bar = $('#shp .shs'); if (t) { const y = t.getBoundingClientRect().top + scrollY - (bar ? bar.offsetHeight : 0) + 1; scrollTo({ top: y, behavior: Math.abs(y - scrollY) > 2500 ? 'auto' : 'smooth' }); } });   // (a long way: jump, a short one: glide)
+  shpSpy(); }
+// (the pill of the aisle you are looking at lights up)
+let shpRaf = 0;
+function shpSpy() { const sec = $('#shp'); if (!sec) return; const bar = sec.querySelector('.shs'), top = bar ? bar.getBoundingClientRect().bottom : 0;
+  let cur = null; sec.querySelectorAll('.shg').forEach(g => { if (g.getBoundingClientRect().top <= top + 12) cur = g.dataset.g; });
+  sec.classList.toggle('stuck', !!bar && bar.getBoundingClientRect().top <= 0.5 && sec.getBoundingClientRect().top < 0);
+  sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('on')) { b.classList.toggle('on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
+addEventListener('scroll', () => { cancelAnimationFrame(shpRaf); shpRaf = requestAnimationFrame(shpSpy); }, { passive: true });
 function renderEmpty(wrap) {
   const picks = picksForEmpty(), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];

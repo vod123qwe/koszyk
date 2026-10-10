@@ -452,3 +452,21 @@ svg { display: block; }
 .ad-bar input { flex: 1; min-width: 0; height: 50px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--soft); font: inherit; font-size: 17px; color: var(--ink); outline: none; }
 .ad-bar input:focus { box-shadow: inset 0 0 0 1.6px var(--cta); }
 .ad-send { width: 50px; height: 50px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--cta); color: var(--ctaInk); } .ad-send svg { width: 20px; height: 20px; }
+
+/* the shop's offers under the list: a sticky head with aisle pills, groups, "Doczytaj więcej" */
+.shp .h { display: none; }
+.shs { position: sticky; top: 0; z-index: 4; background: var(--soft); border-bottom: 1px solid var(--line); transition: box-shadow .25s; }
+.shp.stuck .shs { box-shadow: 0 6px 16px -10px rgba(41,41,61,.35); }
+.shh { display: flex; align-items: center; gap: 10px; height: 56px; font-size: 15px; font-weight: 650; }
+.shh .pill { font-size: 11px; } .shh .n { font-size: 12px; font-weight: 600; color: var(--muted); }
+.shall { margin-left: auto; display: flex; align-items: center; gap: 2px; font-size: 13.5px; font-weight: 600; color: var(--cta); } .shall svg { width: 15px; height: 15px; }
+:root.dark .shall { color: #8fe0b8; }
+.shpills { display: flex; gap: 7px; overflow-x: auto; max-width: var(--w); margin: 0 auto; padding: 0 20px 12px; scrollbar-width: none; } .shpills::-webkit-scrollbar { display: none; }
+.shpills button { flex: none; height: 34px; padding: 0 12px; border-radius: 999px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 550; white-space: nowrap; color: var(--ink); transition: background .2s, box-shadow .2s, color .2s; }
+.shpills button small { margin-left: 2px; font-size: 11px; opacity: .6; }
+.shpills button.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+.shgh { display: flex; justify-content: space-between; padding-top: 18px; padding-bottom: 6px; font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.shg .ep:last-child { margin-bottom: 4px; }
+.shmore { display: flex; align-items: baseline; justify-content: center; gap: 6px; width: calc(100% - 40px); max-width: calc(var(--w) - 40px); height: 52px; margin: 12px auto 4px; border-radius: 14px; background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line); font-size: 15px; font-weight: 650; color: var(--ink); align-items: center; }
+.shmore b { padding: 1px 8px; border-radius: 999px; background: var(--mint); color: var(--cta); font-size: 12px; } .shmore small { font-size: 12px; font-weight: 500; color: var(--muted); }
+.shmore:active { transform: scale(.98); }
