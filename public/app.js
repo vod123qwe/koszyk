@@ -188,12 +188,19 @@ function snack(added, text, lead = 'Dodano', gone = []) { const el = $('.snack')
   el.querySelector('.st').innerHTML = `<b>${lead}:</b> ${added.map(i => esc(i.name + (i.qty == null ? '' : i.unit ? ' ' + qtyText(i) : ' ×' + qtyText(i)))).join(', ')}${gone.length ? ` · <b>Usunięto:</b> ${gone.map(esc).join(', ')}` : ''}`;
   const hide = () => { el.classList.remove('show'); clearTimeout(snackT); };
   const drop = () => { added.forEach(a => { const cur = C.items[a.id]; if (cur && !cur.deleted) put('items', { ...cur, deleted: true }, true); lit.delete(a.id); }); render(); compareSoon(); hide(); };
+  el.querySelector('[data-s=edit]').textContent = 'Zmień'; el.querySelector('[data-s=del]').hidden = false;
   el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; const q = $('#q'); q.value = text; $('#f').classList.add('has'); q.focus(); q.setSelectionRange(text.length, text.length); };
   const del = el.querySelector('[data-s=del]'); del.setAttribute('aria-label', added.length === 1 ? `Usuń: ${added[0].name}` : 'Usuń dodane');
   del.onclick = () => { drop(); vib(10); toast(added.length === 1 ? 'Usunięto z listy' : `Usunięto ${added.length}`); };
   const run = ms => { clearTimeout(snackT); snackT = setTimeout(hide, ms); };
   el.onpointerenter = () => clearTimeout(snackT); el.onpointerleave = () => run(2500); el.onfocusin = () => clearTimeout(snackT);
   el.classList.add('show'); run(5000); }
+// (after something big, like wiping the list: a few seconds to take it back)
+function undoBar(html, undo) { const el = $('.snack'); if (!el) return; $('.toast')?.classList.remove('show');
+  el.querySelector('.st').innerHTML = html; const b = el.querySelector('[data-s=edit]'); b.textContent = 'Cofnij'; el.querySelector('[data-s=del]').hidden = true;
+  b.onclick = () => { undo(); el.classList.remove('show'); clearTimeout(snackT); vib(10); };
+  el.onpointerenter = () => clearTimeout(snackT); el.onpointerleave = () => { clearTimeout(snackT); snackT = setTimeout(() => el.classList.remove('show'), 3000); };
+  el.classList.add('show'); clearTimeout(snackT); snackT = setTimeout(() => el.classList.remove('show'), 7000); }
 let toastT = 0; function toast(t) { $('.snack')?.classList.remove('show'); const el = $('.toast'); if (!el) return; el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2200); }
 
 // ---------- ticking off: the circle fills and a pencil line is drawn through the name; the item stays where it is ----------
@@ -329,7 +336,8 @@ function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.del
       <p>Usuniesz wszystkie ${n} ${plural(n, 'pozycję', 'pozycje', 'pozycji')}, także te jeszcze niekupione. Lista zniknie też u pozostałych osób, z którymi ją dzielisz.</p>
       <div class="wb"><button type="button" class="ghost" data-a="keep">Zostaw</button><button type="button" class="danger" data-a="wipe">Wyczyść listę</button></div></div>`, sh => {
     sh.querySelector('[data-a=keep]').onclick = () => close();
-    sh.querySelector('[data-a=wipe]').onclick = () => { all.forEach(i => put('items', { ...i, deleted: true }, true)); lit.clear(); vib(20); close(); render(); compareSoon(); toast(`Lista wyczyszczona: ${n} ${plural(n, 'pozycja', 'pozycje', 'pozycji')}`); };
+    sh.querySelector('[data-a=wipe]').onclick = () => { all.forEach(i => put('items', { ...i, deleted: true }, true)); lit.clear(); vib(20); close(); render(); compareSoon();
+      undoBar(`<b>Wyczyszczono:</b> ${n} ${plural(n, 'pozycja', 'pozycje', 'pozycji')}`, () => { all.forEach(i => { const cur = C.items[i.id]; if (cur) put('items', { ...cur, deleted: false }, true); }); render(); compareSoon(); toast('Lista wróciła'); }); };
     setTimeout(() => sh.querySelector('[data-a=keep]')?.focus(), 420); }); }
 function renderChips() {
   const el = $('#chips'); if (!Object.values(C.items).some(i => !i.deleted)) { el.innerHTML = ''; el.hidden = true; chipsKey = ''; return; }

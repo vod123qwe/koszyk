@@ -284,3 +284,4 @@ svg { display: block; }
 .lsearch input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: none; font: inherit; font-size: 15px; color: var(--ink); }
 .lsearch:focus-within { box-shadow: inset 0 0 0 1.6px var(--cta); }
 .leaf [hidden] { display: none !important; }
+.snack [hidden] { display: none !important; }
