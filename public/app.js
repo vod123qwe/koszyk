@@ -611,7 +611,6 @@ function renderPin() {
   const app = $('#app'); let pin = '', busy = false;
   // (white, centred and calm: the mark, a big heading, room for the code, round soft keys)
   app.innerHTML = `<div class="pin"><div class="pc">
-    <div class="pmark">${LOGO}</div>
     <h1>Wpisz PIN</h1><p class="psub">Czterocyfrowy kod do wspólnej listy zakupów.</p>
     <div class="cells" aria-live="polite" aria-label="Wpisane cyfry">${'<span><i></i></span>'.repeat(4)}</div>
     <p class="pmsg" role="status"></p>

@@ -526,3 +526,4 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .frq__plus { width: 26px; height: 26px; display: grid; place-items: center; margin-left: 2px; border-radius: 50%; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--cta); }
 .frq__plus svg { width: 14px; height: 14px; }
 :root.dark .frq__plus { background: rgba(255,255,255,.08); }
+.pin h1 { margin-top: 0; }
