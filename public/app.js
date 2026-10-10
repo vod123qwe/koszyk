@@ -424,15 +424,16 @@ function buildList() {
   //  Right, our green: this shop's leaflet → a full-screen mini leaflet. The list itself stays about your products.)
   const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length, sid = store(), L0 = EP[sid];
   const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
-  if (browsing) renderEmpty(wrap);
+  // (browsing: a firm band parts your list from the suggestions; the leaflet below is enough, no tiles)
+  if (browsing) { wrap.insertAdjacentHTML('beforeend', '<div class="brk" aria-hidden="true"></div>'); renderEmpty(wrap); }
   else if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
-  wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
+  if (!browsing) { wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
     ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
     <button type="button" class="tile tile--brand" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
-  loadShopPromos();
   const tc = $('#tCheap'); if (tc) tc.onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id);
-  $('#tLeaf').onclick = openCover;
+  $('#tLeaf').onclick = openCover; }
+  loadShopPromos();
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; } }
 // ---------- offers: each shop's whole current leaflet (groceries and drugstore), what you usually buy first ----------

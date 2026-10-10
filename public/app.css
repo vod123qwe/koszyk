@@ -606,3 +606,7 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .row .del { visibility: hidden; } .row.sw .del { visibility: visible; }
 /* the suggestions and deals rise in once; rebuilt after an add they just stay (no replayed animation, nothing jumps) */
 .sec.ex.still, .sec.ex.still .frq__chip, .sec.ex.still .ep, .sec.ex.still .eps { animation: none; }
+
+/* browsing: a firm band between your list and the suggestions under it */
+.brk { height: 12px; margin-top: var(--s-6); background: var(--soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.brk + .sec.ex .h .c { padding-top: var(--s-5); }
