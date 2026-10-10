@@ -496,7 +496,7 @@ let shpShown = 14, shpStore = '';
 function shpGroups(id, open) { const ranked = rankLeaf(EP[id] || []).filter(o => !open.some(i => offerFits(o.name, i.name) || norm(i.name) === norm(o.name)));
   const my = mine().slice(0, 30), mineFits = o => my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)), forMe = ranked.filter(mineFits).slice(0, 6), rest = ranked.filter(o => !forMe.includes(o)), by = {};
   for (const o of rest) (by[o.cat] = by[o.cat] || []).push(o);
-  return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...orderFor(id).filter(c => by[c]).map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
+  return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...[...orderFor(id).filter(c => by[c] && c !== 'alkohol'), ...(by.alkohol ? ['alkohol'] : [])].map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
 let coverOpen = false, coverRaf = 0;
 function openCover() { const el = $('.cover'); if (!el) return; coverOpen = true; el.hidden = false; renderCover(true); requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
 function closeCover() { const el = $('.cover'); if (!el || !coverOpen) return; coverOpen = false; el.classList.remove('show'); document.documentElement.classList.remove('locked'); setTimeout(() => { if (!coverOpen) el.hidden = true; }, 420); }

@@ -577,3 +577,15 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .sec .h .hic { display: none; font-size: 17px; line-height: 1; letter-spacing: 0; }
 :root.no-ic .sec .h .hic { display: inline; }
 :root.no-ic .row .em { display: none; }
+
+/* the leaflet (full screen): light like the list, no grey; aisle headers and rows drawn the way the list draws them */
+.cover, .cover .shp, .cover .shs { background: var(--bg); }
+.cover .shp { padding-bottom: 0; }
+.cover .shgh { height: 46px; align-items: center; padding-top: 14px; padding-bottom: 0; border-bottom: 1px solid var(--line); }
+.cover .shg .ep { min-height: 68px; gap: 14px; padding: 10px 20px; font-size: 15px; border-bottom: 1px solid var(--line); }
+.cover .shg .ep:first-of-type { margin-top: 0; } .cover .shg .ep:last-child { margin-bottom: 0; }
+.cover .shg .ep .em { width: 44px; height: 44px; border-radius: 13px; font-size: 23px; }
+.cover .shp .ep .pl { background: transparent; box-shadow: inset 0 0 0 1.4px var(--line); color: var(--muted); }
+.cover .shp .ep.in .pl { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
+@media (hover: hover) { .cover .shp .ep:hover { background: var(--soft); } }
+.cover .shmore { margin-top: var(--s-5); }
