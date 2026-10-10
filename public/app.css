@@ -544,3 +544,4 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 /* the shop switcher in place of the row of pills */
 .stores { margin: var(--s-6) 0 var(--s-2); }
 .swhost { position: relative; display: flex; padding-top: 14px; }
+.stores .swhost { flex: 1; min-width: 0; }

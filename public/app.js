@@ -393,7 +393,9 @@ function rowEl(it) {
 let seenCats = new Set(), chipsKey = '';
 // ---------- keeping the page still: a rebuilt list keeps its height and scroll; the row you just added stays in view ----------
 let focusRow = null;
-function showFocus(smooth) { if (!focusRow || Date.now() > focusRow.until) { focusRow = null; return; }
+// (adding never moves the page: Jarek keeps his place; the new row only lights up where it lands)
+function showFocus(smooth) { focusRow = null; return;
+  if (!focusRow || Date.now() > focusRow.until) { focusRow = null; return; }
   const row = document.querySelector(`.row[data-id="${focusRow.id}"]`); if (!row) return;
   const r = row.getBoundingClientRect(), dock = $('.dock') ? $('.dock').getBoundingClientRect().top : innerHeight;
   if (r.top >= 16 && r.bottom <= dock - 8) return;   // (already visible: leave the page alone)
@@ -419,9 +421,9 @@ function buildList() {
   const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
   if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
   wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
-    ${total && best ? `<button type="button" class="tile tile--ink tile--art" id="tCheap">${ART_TAG}<span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
+    ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
-    <button type="button" class="tile tile--brand tile--art" id="tLeaf"${L0 === null ? ' disabled' : ''}>${ART_LEAF}<span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
+    <button type="button" class="tile tile--brand" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
   loadShopPromos();
   const tc = $('#tCheap'); if (tc) tc.onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id);
   $('#tLeaf').onclick = openCover;
@@ -678,7 +680,7 @@ function mount() {
     <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
       <button class="btn btn--secondary gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
       <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
-    <nav class="stores" aria-label="Sklep"><div class="c"><div class="swhost"><div class="switcher" id="storeSw"><button class="sw-arrow" type="button" id="swPrev" aria-label="Poprzedni sklep">${ic('chev', 2.2)}</button><span class="sw-name" id="swName"></span><button class="sw-arrow" type="button" id="swNext" aria-label="Następny sklep">${ic('chev', 2.2)}</button></div></div></div></nav>
+    <nav class="stores" aria-label="Sklep"><div class="c"><div class="swhost"><div class="switcher switcher--block" id="storeSw"><button class="sw-arrow" type="button" id="swPrev" aria-label="Poprzedni sklep">${ic('chev', 2.2)}</button><span class="sw-name" id="swName"></span><button class="sw-arrow" type="button" id="swNext" aria-label="Następny sklep">${ic('chev', 2.2)}</button></div></div></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="pblur" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chips" id="chips" hidden></div>
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
