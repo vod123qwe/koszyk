@@ -197,7 +197,7 @@ let toastT = 0; function toast(t) { $('.snack')?.classList.remove('show'); const
 // ---------- ticking off: the circle fills and a pencil line is drawn through the name; the item stays where it is ----------
 const CAT_EMOJI = { warzywa: '🥦', pieczywo: '🥖', nabial: '🥛', mieso: '🥩', wedliny: '🧀', mrozonki: '🧊', suche: '🍝', konserwy: '🥫', przyprawy: '🧂', sniadanie: '🍪', kawa: '☕', napoje: '🥤', alkohol: '🍷', chemia: '🧽', higiena: '🧴', dziecko: '🍼', zwierzeta: '🐾', dom: '🏠' };
 // ---------- emoji: from the AI or the catalog's stems; when nothing fits, the aisle's own (except "other") ----------
-function emojiGuess(name) { const n = String(name || '').toLowerCase(), words = n.split(/[\s,-]+/).filter(Boolean), list = CAT.emoji || [];
+function emojiGuess(name) { if ((CAT.nonfood || []).some(w => (String(name || '').toLowerCase() + ' ').startsWith(w))) return null; const n = String(name || '').toLowerCase(), words = n.split(/[\s,-]+/).filter(Boolean), list = CAT.emoji || [];
   for (const [k, e] of list) if (k.includes(' ') ? (n + ' ').includes(k) : (words[0] || '').startsWith(k)) return e;
   for (const [k, e] of list) if (!k.includes(' ') && words.some(w => w.startsWith(k))) return e;
   return null; }
