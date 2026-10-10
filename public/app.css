@@ -557,3 +557,15 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .line .c { padding-top: 14px; padding-bottom: 14px; min-height: 72px; }
 .row:has(.deal) .line .c, .row:has(.subs) .line .c, .row:has(.meta) .line .c { padding-top: 18px; padding-bottom: 18px; }
 .line .txt .deal, .line .txt .subs { margin-top: 10px; }
+
+/* a row with a deal: the name stays centred on the tile; the exact offer and its terms sit quietly under it; the price stacks by the tick */
+.line .txt { align-self: center; }
+.dsub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; }
+.dsub__name { font-size: var(--fs-xs); color: var(--muted); line-height: 1.35; flex-basis: 100%; }
+.dprice { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 4px 2px 4px 8px; text-align: right; border-radius: var(--r-sm); }
+.dprice .badge--promo { margin-bottom: 2px; }
+.dprice b { font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } :root.dark .dprice b { color: #8fe0b8; }
+.dprice s { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
+@media (hover: hover) { .dprice:hover { background: var(--soft); } }
+.row.on .dprice, .row.on .dsub { opacity: .45; }
+.row:has(.dprice) .line .c { padding-top: 16px; padding-bottom: 16px; }
