@@ -545,3 +545,8 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .stores { margin: var(--s-6) 0 var(--s-2); }
 .swhost { position: relative; display: flex; padding-top: 14px; }
 .stores .swhost { flex: 1; min-width: 0; }
+/* suggestion pills: calm outline, no aisle colours (only the discount stays green) */
+.frq__chip, .frq__chip.chip--tile { background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line); }
+@media (hover: hover) { .frq__chip:hover { background: var(--soft); } }
+.frq__plus { background: var(--soft); color: var(--ink); }
+:root.dark .frq__plus { background: var(--soft); }
