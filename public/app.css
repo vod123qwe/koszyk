@@ -271,3 +271,11 @@ svg { display: block; }
 .keys button:focus-visible { outline: 2px solid var(--aqua); outline-offset: -2px; }
 .pmsg { min-height: 20px; margin: 16px 20px; text-align: center; font-size: 14px; color: #d93b40; }
 @media (min-width: 680px) { .keys { border-left: 1px solid var(--line); border-right: 1px solid var(--line); } .keys > *:nth-child(3n) { border-right: 0; } }
+
+/* the whole leaflet */
+.seeall { display: flex; align-items: center; gap: 8px; width: 100%; max-width: var(--w); margin: 2px auto 8px; padding: 12px 20px; font-size: 14.5px; font-weight: 600; color: var(--cta); text-align: left; }
+.seeall b { padding: 1px 8px; border-radius: 999px; background: var(--mint); font-size: 12px; font-weight: 650; } .seeall svg { width: 16px; height: 16px; margin-left: auto; }
+:root.dark .seeall { color: #8fe0b8; }
+.leaf .lh { position: sticky; top: -10px; z-index: 1; display: flex; justify-content: space-between; padding: 14px 20px 8px; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.leaf .ep { border-bottom: 1px solid var(--line); }
+.ep.in .pl { background: var(--cta); color: var(--ctaInk); box-shadow: none; animation: pop .35s var(--ease); }

@@ -125,7 +125,7 @@ function compareSoon() { clearTimeout(cmpT); cmpT = setTimeout(async () => {
 // ---------- suggestions: what is due again (from the rhythm you buy it in), what is on offer, what you buy most ----------
 function suggestions() {
   const open = new Set(openItems().map(i => norm(i.name))), now = Date.now(), hs = Object.values(C.history).filter(h => !open.has(h.id) && looksLikeProduct(h));
-  const promo = hs.filter(h => bestOffer(h.name)).slice(0, 4).map(h => ({ h, p: bestOffer(h.name) }));
+  const promo = hs.map(h => ({ h, p: bestOffer(h.name) || leafHit(h.name) })).filter(x => x.p).sort((a, b) => offPct(b.p) - offPct(a.p)).slice(0, 6);   // (on the list's promos or anywhere in this shop's leaflet)
   const due = hs.filter(h => h.count >= 2 && h.avg && (now - h.lastAt) / h.avg > .8 && !promo.some(x => x.h === h)).sort((a, b) => (now - b.lastAt) / b.avg - (now - a.lastAt) / a.avg).slice(0, 5);
   const freq = hs.filter(h => now - h.lastAt > 2 * 864e5 && !due.includes(h) && !promo.some(x => x.h === h)).sort((a, b) => b.count - a.count).slice(0, Math.max(0, 6 - due.length));
   return { promo, due, freq }; }
@@ -262,42 +262,61 @@ function renderList() {
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
   renderShopPromos(wrap, open); }
-// ---------- the empty list: a clear "nothing here yet", what you might want, and this week's offers in each shop ----------
-const STAPLES = [['Mleko', 'nabial'], ['Chleb', 'pieczywo'], ['Jajka', 'nabial'], ['Masło', 'nabial'], ['Banany', 'warzywa'], ['Pomidory', 'warzywa'], ['Ser żółty', 'nabial'], ['Kawa', 'kawa'], ['Jogurt', 'nabial'], ['Makaron', 'suche'], ['Kurczak', 'mieso'], ['Jabłka', 'warzywa']];
+// ---------- offers: each shop's whole current leaflet (groceries and drugstore), what you usually buy first ----------
+const STAPLES = [['Mleko', 'nabial'], ['Chleb', 'pieczywo'], ['Jajka', 'nabial'], ['Masło', 'nabial'], ['Banany', 'warzywa'], ['Pomidory', 'warzywa'], ['Ser żółty', 'wedliny'], ['Kawa', 'kawa'], ['Jogurt', 'nabial'], ['Makaron', 'suche'], ['Kurczak', 'mieso'], ['Jabłka', 'warzywa'], ['Ziemniaki', 'warzywa'], ['Woda', 'napoje'], ['Papier toaletowy', 'higiena'], ['Płyn do naczyń', 'chemia']];
 let EP = {}, epAt = 0, epBusy = false;
-const looksLikeProduct = h => h.name.length <= 32 && h.name.trim().split(/s+/).length <= 4;   // (dictated notes to the app live in history too)
-function picksForEmpty() { const hs = Object.values(C.history).filter(looksLikeProduct).sort((a, b) => b.count - a.count || b.lastAt - a.lastAt).slice(0, 8).map(h => ({ name: h.name, cat: h.cat, emoji: h.emoji }));
-  for (const [name, cat] of STAPLES) { if (hs.length >= 8) break; if (!hs.some(h => norm(h.name) === norm(name))) hs.push({ name, cat }); }
+const looksLikeProduct = h => h.name.length <= 32 && h.name.trim().split(/\s+/).length <= 4;   // (dictated notes to the app live in history too)
+const L_ = 'a-ząćęłńóśźż', stemOf = w => w.slice(0, Math.max(4, Math.min(6, w.length - 1)));
+// (does this offer fit that product? a short word must be the word itself: "sok" is not "Sokołów")
+function offerFits(offerName, product) { const t = norm(product).split(' ').find(w => w.length >= 3); if (!t) return false;
+  return t.length <= 3 ? new RegExp('(^|[^' + L_ + '])' + t + '[' + L_ + ']?([^' + L_ + ']|$)', 'i').test(offerName) : (' ' + offerName.toLowerCase()).includes(' ' + stemOf(t)); }
+const mine = () => Object.values(C.history).filter(looksLikeProduct).sort((a, b) => b.count - a.count || b.lastAt - a.lastAt);
+const leafHit = name => (EP[store()] || []).find(o => offerFits(o.name, name));
+const offPct = o => o.oldPrice ? 1 - o.price / o.oldPrice : 0;
+// (the order: what you buy, then the deepest cuts, then plain leaflet prices)
+function rankLeaf(list) { const my = mine().slice(0, 30).map(h => h.name);
+  const score = o => (my.some(n => offerFits(o.name, n)) ? 2 : 0) + (STAPLES.some(s => offerFits(o.name, s[0])) ? .6 : 0) + offPct(o) + (o.oldPrice ? .2 : 0);
+  const seen = new Set(), sorted = list.filter(o => !seen.has(o.name) && seen.add(o.name)).sort((a, b) => score(b) - score(a));
+  // (variety up top: at most two from one aisle in a row, the rest wait their turn)
+  const top = [], later = [], per = {}; for (const o of sorted) { if ((per[o.cat] || 0) < 2 && top.length < 12) { top.push(o); per[o.cat] = (per[o.cat] || 0) + 1; } else later.push(o); }
+  return [...top, ...later]; }
+function picksForEmpty() { const hs = mine().slice(0, 10).map(h => ({ name: h.name, cat: h.cat, emoji: h.emoji }));
+  for (const [name, cat] of STAPLES) { if (hs.length >= 12) break; if (!hs.some(h => norm(h.name) === norm(name))) hs.push({ name, cat }); }
   return hs; }
 async function loadShopPromos() { if (epBusy || Date.now() - epAt < 30 * 60e3) return; epBusy = true;
-  const names = [...new Set([...Object.values(C.history).filter(looksLikeProduct).sort((a, b) => b.count - a.count).slice(0, 8).map(h => h.name), ...STAPLES.map(s => s[0])])].slice(0, 16);
-  await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/promos', { store: s.id, names }), list = [];
-    for (const n of names) { const o = (r.promos || {})[n]; if (o && o[0]) list.push({ term: n, o: o[0], cat: (STAPLES.find(x => x[0] === n) || [])[1] || (C.history[norm(n)] || {}).cat }); }
-    const off = x => x.o.oldPrice ? 1 - x.o.price / x.o.oldPrice : 0; EP[s.id] = list.sort((a, b) => off(b) - off(a)).slice(0, 8); } catch { EP[s.id] = EP[s.id] || null; } }));
-  epAt = Date.now(); epBusy = false; render(); }
-const epRow = ({ term, o, cat }) => `<button class="ep" type="button" data-add="${esc(term)}" data-cat="${esc(cat || '')}" style="--tile:var(--t-${cat || 'dom'})"><span class="em">${esc(emojiGuess(o.name) || emojiGuess(term) || CAT_EMOJI[cat] || '🛒')}</span><span class="en">${esc(o.name)}</span><span class="dp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
-const wireAdds = root => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8); if (added.length) snack(added, b.dataset.add); });
-// (under a list in progress: this shop's offers on things you usually buy, on grey, one tap to add)
+  await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/leaflet', { store: s.id }); EP[s.id] = r.items || []; } catch { EP[s.id] = EP[s.id] || null; } }));
+  epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
+const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en">${esc(o.name)}</span><span class="dp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
+const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
+  if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
+const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
+// (the whole leaflet in a sheet, by aisle in this shop's order; adding keeps it open)
+function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
+  for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
+  sheet(`<h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} spożywczych i drogeryjnych w tym tygodniu. Dotknij, żeby dopisać do listy.</p>
+    <div class="leaf">${order.filter(c => by[c]).map(c => `<div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}`).join('')}</div>`, sh => wireAdds(sh, true)); }
+const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => leafletSheet(b.dataset.all));
+// (under a list in progress: this shop's offers, on grey, one tap to add)
 function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
-  const have = new Set(open.map(i => norm(i.name).split(' ')[0])), rows = (l || []).filter(x => !have.has(norm(x.term).split(' ')[0])).slice(0, 6);
-  if (l && !rows.length) return;
-  wrap.insertAdjacentHTML('beforeend', `<section class="shp"><div class="h"><div class="c"><span class="pill">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? rows.length : ''}</span></div></div>
-    ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>' : rows.map(epRow).join('')}
-    <p class="note">Produkty, które zwykle kupujesz, teraz taniej. Dotknij, żeby dopisać do listy.</p></section>`);
-  wireAdds(wrap.querySelector('.shp')); }
+  const rows = rankLeaf(l || []).filter(o => !open.some(i => offerFits(o.name, i.name) || norm(i.name) === norm(o.name))).slice(0, 8);
+  if (l && !l.length) return;
+  wrap.insertAdjacentHTML('beforeend', `<section class="shp"><div class="h"><div class="c"><span class="pill">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? l.length : ''}</span></div></div>
+    ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>' : rows.map(epRow).join('') + allBtn(id, l.length)}
+    <p class="note">Najpierw to, co zwykle kupujesz, potem największe obniżki. Dotknij, żeby dopisać do listy.</p></section>`);
+  const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec); }
 function renderEmpty(wrap) {
   const picks = picksForEmpty(), cur = store(), stores = [CAT.stores.find(s => s.id === cur), ...CAT.stores.filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];
     const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
-      : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'Brak promocji na popularne produkty.'}</div>`
-      : l.slice(0, 4).map(epRow).join('');
+      : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
+      : rankLeaf(l).slice(0, 5).map(epRow).join('') + allBtn(s.id, l.length);
     return `<div class="eps" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
   wrap.insertAdjacentHTML('beforeend', `<div class="empty"><div class="c">
       <div class="eart" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="58" class="ea-bg"/><path class="ea-ln" d="M30 50h60l-6 34a6 6 0 0 1-6 5H42a6 6 0 0 1-6-5z"/><path class="ea-ln" d="M46 50l10-18M74 50L64 32"/><path class="ea-ln ea-dash" d="M44 64h32M47 75h26"/><circle cx="90" cy="34" r="7" class="ea-dot"/></svg></div>
       <h2>Lista jest pusta</h2><p>Nie masz jeszcze żadnych produktów. Przytrzymaj zielony przycisk i powiedz, czego potrzebujesz.</p></div></div>
-    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => `<button class="chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}</button>`).join('')}</div></section>
+    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name); return `<button class="chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? ` <span class="pill">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>
     <section class="sec ex"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
-  wireAdds(wrap); loadShopPromos(); }
+  wireAdds(wrap); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
   const close = sheet(`<div class="warn"><span class="wi">${ic('trash', 2)}</span><h3>Wyczyścić całą listę?</h3>
       <p>Usuniesz wszystkie ${n} ${plural(n, 'pozycję', 'pozycje', 'pozycji')}, także te jeszcze niekupione. Lista zniknie też u pozostałych osób, z którymi ją dzielisz.</p>
