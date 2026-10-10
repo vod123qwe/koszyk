@@ -105,3 +105,18 @@ input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 
 .offer__price s { font-size: var(--fs-sm); color: var(--muted); white-space: nowrap; }
 .offer__action { grid-column: 1 / -1; }
 .offers { border-top: 1px solid var(--line); }
+
+/* Tile, v2: the same rhythm in every tile (label · title · value · caption · button), the button a full-width bar at the bottom */
+.tile { gap: 0; padding: var(--s-4); }
+.tile__label { margin-bottom: 6px; }
+.tile__title { font-size: clamp(20px, 6vw, 26px); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 100%; }
+.tile__meta { margin-top: auto; gap: 3px; font-size: clamp(18px, 5.4vw, 22px); }
+.tile__meta small { min-height: calc(2 * 1.35em); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-xs); }
+.tile__go { justify-content: center; width: 100%; height: 40px; margin-top: var(--s-3); border-radius: var(--r-full); background: rgba(255,255,255,.14); font-size: var(--fs-sm); transition: background var(--dur-2); }
+.tile--brand .tile__go { background: rgba(255,255,255,.18); } :root.dark .tile--brand .tile__go { background: rgba(0,0,0,.14); }
+.tile--quiet .tile__go { background: var(--bg); }
+@media (hover: hover) { button.tile:hover .tile__go { background: rgba(255,255,255,.24); } }
+/* Tile, v2.1: square by default, taller when the content needs it (never clipped); calmer type on phones */
+.tile { overflow: visible; }
+.tile__title { font-size: clamp(20px, 5.6vw, 26px); line-height: 1.12; padding-bottom: 2px; }
+.tile__meta { margin-top: auto; padding-top: var(--s-3); font-size: clamp(18px, 5vw, 22px); }

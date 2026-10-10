@@ -494,3 +494,15 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .deal__line b { font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } :root.dark .deal__line b { color: #8fe0b8; }
 .deal__line s { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
 .row.on .deal { opacity: .45; }
+
+/* "Często kupujesz": two rows that scroll sideways, starting in line with the list */
+.freq { margin-top: var(--s-6); }
+.freq .h .c { display: flex; align-items: baseline; gap: 10px; height: 46px; padding-top: 14px; font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.freq .h { border-bottom: 1px solid var(--line); } .freq .h .n { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.frq { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); justify-content: start; gap: var(--s-2); overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity;
+  padding: var(--s-4) var(--gutter) var(--s-2) max(var(--gutter), calc((100vw - var(--w)) / 2 + var(--gutter))); }
+.frq::-webkit-scrollbar { display: none; }
+.frq__chip { scroll-snap-align: start; animation: rise .35s var(--ease) both; animation-delay: calc(var(--i, 0) * 25ms); }
+.frq__chip .e { font-size: 16px; } .frq__chip .badge { margin-left: 2px; }
+.tiles { margin-top: var(--s-7); }
+.frq { justify-items: start; }

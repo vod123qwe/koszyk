@@ -183,6 +183,16 @@ function compareSoon() { clearTimeout(cmpT); cmpT = setTimeout(async () => {
   CMP = out; storesKey = ''; render(); }, 1400); }
 
 // ---------- suggestions: what is due again (from the rhythm you buy it in), what is on offer, what you buy most ----------
+// (what you are likely to need and don't have yet: bought often, due again by your rhythm, cheaper today; then popular things)
+function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))), now = Date.now(), out = [], seen = new Set();
+  const hs = Object.values(C.history).filter(h => looksLikeProduct(h) && !onList.has(norm(h.name)));
+  const score = h => h.count + (h.count >= 2 && h.avg && (now - h.lastAt) / h.avg > .8 ? 3 : 0) + (leafHit(h.name, h.cat) && offPct(leafHit(h.name, h.cat)) > 0 ? 1.5 : 0) + Math.max(0, 1 - (now - h.lastAt) / (30 * 864e5));
+  for (const h of hs.sort((a, b) => score(b) - score(a))) { const k = norm(h.name); if (!seen.has(k)) { seen.add(k); out.push({ name: h.name, cat: h.cat, emoji: h.emoji }); } }
+  for (const [name, cat] of CAT.common || []) { if (out.length >= 18) break; const k = norm(name); if (!seen.has(k) && !onList.has(k)) { seen.add(k); out.push({ name, cat }); } }
+  return out.slice(0, 18); }
+function freqHtml() { const picks = freqPicks(); if (!picks.length) return '';
+  return `<section class="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq">${picks.map((p, i) => { const o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0;
+    return `<button type="button" class="chip chip--tile frq__chip" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--tile:var(--t-${p.cat || 'dom'});--i:${i}"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${deal ? ` <span class="badge badge--promo">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>`; }
 function suggestions() {
   const open = new Set(openItems().map(i => norm(i.name))), now = Date.now(), hs = Object.values(C.history).filter(h => !open.has(h.id) && looksLikeProduct(h));
   const promo = hs.map(h => ({ h, p: bestOffer(h.name) || leafHit(h.name, h.cat) })).filter(x => x.p).sort((a, b) => offPct(b.p) - offPct(a.p)).slice(0, 6);   // (on the list's promos or anywhere in this shop's leaflet)
@@ -382,8 +392,9 @@ function buildList() {
   //  Right, our green: this shop's leaflet → a full-screen mini leaflet. The list itself stays about your products.)
   const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), best = cs[0], total = open.length, sid = store(), L0 = EP[sid];
   const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
+  if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
   wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
-    ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj sklepy' : 'Zobacz produkty'}${ic('chev', 2)}</span></button>`
+    ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
     <button type="button" class="tile tile--brand" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
   loadShopPromos();
@@ -508,7 +519,7 @@ function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.del
     sh.querySelector('[data-a=wipe]').onclick = () => { all.forEach(i => put('items', { ...i, deleted: true }, true)); lit.clear(); vib(20); close(); render(); compareSoon();
       undoBar(`<b>Wyczyszczono:</b> ${n} ${plural(n, 'pozycja', 'pozycje', 'pozycji')}`, () => { all.forEach(i => { const cur = C.items[i.id]; if (cur) put('items', { ...cur, deleted: false }, true); }); render(); compareSoon(); toast('Lista wróciła'); }); };
     setTimeout(() => sh.querySelector('[data-a=keep]')?.focus(), 420); }); }
-function renderChips() {
+function renderChips() { const el0 = $('#chips'); if (el0) { el0.innerHTML = ''; el0.hidden = true; } return;
   const el = $('#chips'); if (!Object.values(C.items).some(i => !i.deleted)) { el.innerHTML = ''; el.hidden = true; chipsKey = ''; return; }
   const { promo, due, freq } = suggestions(); let i = 0;
   const key = [...promo.map(x => x.h.id + x.p.price), ...due.map(h => h.id), ...freq.map(h => h.id)].join('|'); if (key === chipsKey) return; chipsKey = key;
