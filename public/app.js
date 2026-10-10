@@ -475,7 +475,8 @@ function holdPin() { if (!pin || Date.now() > pin.until || coverOpen) { pin = nu
   const d = n ? n.getBoundingClientRect().top - pin.t0 : nb ? nb.getBoundingClientRect().top - pin.b0 : 0; if (Math.abs(d) > 1) scrollBy(0, d); }
 ['wheel', 'touchmove', 'keydown'].forEach(t => addEventListener(t, () => { pin = null; }, { passive: true }));
 const wireAdds = (roots, keep, toggle) => (roots instanceof Element ? [roots] : [...roots]).forEach(root => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => keepPlace(b, () => {
-  const name = b.dataset.add, cur = toggle && Object.values(C.items).find(i => !i.deleted && norm(i.name) === norm(name));
+  const name = b.dataset.add, cur = toggle && Object.values(C.items).find(i => !i.deleted && norm(i.name) === norm(name)), shop = !cur && b.closest('.eps[data-store]')?.dataset.store;
+  if (shop && shop !== store()) setStore(shop);
   if (cur) { put('items', { ...cur, deleted: true }); vib(6); return; }
   const added = addItems([{ name, category: b.dataset.cat || undefined }]); vib(8);
   if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${name}`); } else if (added.length) snack(added, name); })));
@@ -552,9 +553,9 @@ function renderEmpty(wrap) {
     const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
       : rankLeaf(l).slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
-    return `<div class="eps" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
+    return `<div class="eps" data-store="${s.id}" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
   wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--tile frq__chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; }).join('')}</div></section>` : ''}
-    <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
+    <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${(() => { const picked = stores.filter(x => (EP[x.id] || []).some(o => has(o.title || o.name))); return (picked.length ? [picked.find(x => x.id === cur) || picked[0]] : stores).map(promoBlock).join(''); })()}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
   exShown = true; wireAdds(wrap.querySelectorAll('.ex'), false, true); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
   const close = sheet(`<div class="warn"><span class="wi">${ic('trash', 2)}</span><h3>Wyczyścić całą listę?</h3>
