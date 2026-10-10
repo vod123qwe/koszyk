@@ -185,6 +185,17 @@ function compareSoon() { clearTimeout(cmpT); cmpT = setTimeout(async () => {
 
 // ---------- suggestions: what is due again (from the rhythm you buy it in), what is on offer, what you buy most ----------
 // (what you are likely to need and don't have yet: bought often, due again by your rhythm, cheaper today; then popular things)
+// ---------- tile art: flat shapes in the tile corner, cropped by its rounding (colours from tokens, via classes) ----------
+const ART_TAG = `<span class="tile__artbox" aria-hidden="true"><svg class="tile__art" viewBox="0 0 120 120">
+  <circle class="a-soft" cx="86" cy="40" r="34"/>
+  <g transform="rotate(-24 62 62)"><path class="a-main" d="M44 26h36a8 8 0 0 1 8 8v48a8 8 0 0 1-2.6 5.9L67.4 104a8 8 0 0 1-10.8 0L38.6 87.9A8 8 0 0 1 36 82V34a8 8 0 0 1 8-8z"/>
+    <circle class="a-hole" cx="62" cy="41" r="6"/><text class="a-mark" x="62" y="81" text-anchor="middle">%</text></g></svg></span>`;
+const ART_LEAF = `<span class="tile__artbox" aria-hidden="true"><svg class="tile__art" viewBox="0 0 120 120">
+  <g transform="rotate(14 60 60)"><rect class="a-soft" x="34" y="20" width="56" height="74" rx="8"/></g>
+  <g transform="rotate(-6 60 60)"><rect class="a-paper" x="30" y="18" width="58" height="76" rx="8"/>
+    <rect class="a-line" x="40" y="30" width="18" height="14" rx="3"/><rect class="a-line" x="64" y="30" width="14" height="4" rx="2"/><rect class="a-line" x="64" y="38" width="10" height="4" rx="2"/>
+    <rect class="a-line" x="40" y="52" width="38" height="4" rx="2"/><rect class="a-line" x="40" y="60" width="28" height="4" rx="2"/></g>
+  <circle class="a-main" cx="86" cy="82" r="18"/><text class="a-mark" x="86" y="89" text-anchor="middle">%</text></svg></span>`;
 function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))), now = Date.now(), out = [], seen = new Set();
   const hs = Object.values(C.history).filter(h => looksLikeProduct(h) && !onList.has(norm(h.name)));
   const score = h => h.count + (h.count >= 2 && h.avg && (now - h.lastAt) / h.avg > .8 ? 3 : 0) + (leafHit(h.name, h.cat) && offPct(leafHit(h.name, h.cat)) > 0 ? 1.5 : 0) + Math.max(0, 1 - (now - h.lastAt) / (30 * 864e5));
@@ -407,9 +418,9 @@ function buildList() {
   const leafN = L0 ? new Set(L0.map(o => norm(o.name))).size : 0, leafTop = L0 && L0.length ? Math.max(...L0.map(o => Math.round(offPct(o) * 100))) : 0;
   if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
   wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
-    ${total && best ? `<button type="button" class="tile tile--ink" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
+    ${total && best ? `<button type="button" class="tile tile--ink tile--art" id="tCheap">${ART_TAG}<span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
-    <button type="button" class="tile tile--brand" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
+    <button type="button" class="tile tile--brand tile--art" id="tLeaf"${L0 === null ? ' disabled' : ''}>${ART_LEAF}<span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
   loadShopPromos();
   const tc = $('#tCheap'); if (tc) tc.onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id);
   $('#tLeaf').onclick = openCover;
@@ -521,7 +532,7 @@ function renderEmpty(wrap) {
   wrap.insertAdjacentHTML('beforeend', `<div class="empty"><div class="c">
       <div class="eart" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="58" class="ea-bg"/><path class="ea-ln" d="M30 50h60l-6 34a6 6 0 0 1-6 5H42a6 6 0 0 1-6-5z"/><path class="ea-ln" d="M46 50l10-18M74 50L64 32"/><path class="ea-ln ea-dash" d="M44 64h32M47 75h26"/><circle cx="90" cy="34" r="7" class="ea-dot"/></svg></div>
       <h2>Lista jest pusta</h2><p>Nie masz jeszcze żadnych produktów. Przytrzymaj zielony przycisk i powiedz, czego potrzebujesz.</p></div></div>
-    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--sm chip--tile" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? ` <span class="badge badge--promo">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>
+    <section class="sec ex"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--tile frq__chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; }).join('')}</div></section>
     <section class="sec ex"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${stores.map(promoBlock).join('')}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
   wireAdds(wrap); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;

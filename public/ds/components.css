@@ -122,3 +122,34 @@ input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 
 .tile { overflow: visible; }
 .tile__title { font-size: clamp(20px, 5.6vw, 26px); line-height: 1.12; padding-bottom: 2px; }
 .tile__meta { margin-top: auto; padding-top: var(--s-3); font-size: clamp(18px, 5vw, 22px); }
+
+/* Tile art: a soft 3D object in the top-right corner, nudging out of the edge; the title keeps clear of it */
+.tile--art .tile__art { position: absolute; top: -14px; right: -8px; width: clamp(72px, 24vw, 104px); height: auto; pointer-events: none; filter: drop-shadow(0 8px 14px rgba(0,0,0,.18)); animation: tileFloat 6s ease-in-out infinite; }
+.tile--art:nth-child(2) .tile__art { animation-delay: -3s; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(56px, 18vw, 84px)); }
+@keyframes tileFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-4px) rotate(-2deg); } }
+@media (prefers-reduced-motion: reduce) { .tile--art .tile__art { animation: none; } }
+@media (hover: hover) { button.tile--art:hover .tile__art { transform: translateY(-6px) rotate(-4deg) scale(1.04); transition: transform .4s var(--ease); animation-play-state: paused; } }
+/* Tile, v3: the number is the hero. Label and shop name sit small beside the art; the value is big and full width. */
+.tile__title { font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: -.01em; margin-top: 2px; }
+.tile__meta { font-size: clamp(28px, 8.2vw, 42px); font-weight: var(--fw-bold); letter-spacing: -.035em; line-height: 1; gap: 6px; }
+.tile__meta small { letter-spacing: 0; line-height: 1.35; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(52px, 16vw, 84px)); }
+@media (max-width: 420px) { .tile--art .tile__art { width: 70px; top: -12px; right: -6px; } }
+
+/* Tile art, flat: solid token colours, no gradient, sheen or shadow; it bleeds off the top-right corner, cropped by the tile's rounding */
+.tile__artbox { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.tile--art .tile__art { top: -18px; right: -20px; width: clamp(96px, 30vw, 128px); filter: none; animation: tileFloat 7s ease-in-out infinite; }
+@media (max-width: 420px) { .tile--art .tile__art { width: 92px; top: -16px; right: -18px; } }
+@keyframes tileFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(3px) rotate(-1.5deg); } }
+.tile__art text { font-family: var(--font); font-weight: 800; font-size: 24px; }
+.tile--ink .a-soft { fill: color-mix(in srgb, var(--aqua) 18%, transparent); } .tile--ink .a-main { fill: var(--aqua); } .tile--ink .a-hole { fill: var(--tileInk); } .tile--ink .a-mark { fill: var(--tileInk); }
+.tile--brand .a-soft { fill: color-mix(in srgb, var(--markInk) 40%, transparent); } .tile--brand .a-paper { fill: #ffffff; } .tile--brand .a-line { fill: color-mix(in srgb, var(--markInk) 70%, #ffffff); }
+.tile--brand .a-main { fill: var(--markInk); } .tile--brand .a-mark { fill: var(--cta); font-size: 20px; }
+:root.dark .tile--brand .a-paper { fill: #eafaf2; } :root.dark .tile--brand .a-mark { fill: #0e4f47; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(64px, 20vw, 96px)); }
+@media (max-width: 420px) {
+  .tile--art .tile__art { width: 78px; top: -18px; right: -18px; }
+  .tile--art .tile__label { max-width: calc(100% - 46px); letter-spacing: .04em; }
+  .tile--art .tile__title { max-width: calc(100% - 50px); }
+}
