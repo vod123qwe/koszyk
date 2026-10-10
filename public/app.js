@@ -421,12 +421,13 @@ const LOGO = '<span class="logo" role="img" aria-label="Koszyk"><svg viewBox="0 
 // ---------- the PIN ----------
 function renderPin() {
   const app = $('#app'); let pin = '', busy = false;
-  app.innerHTML = `<div class="pin">
-    <header class="top"><div class="c">${LOGO}<span class="tag"><i></i><span>Lista<br>zakupów</span></span></div></header>
-    <section class="hero"><div class="c"><h1>Wspólna lista<br><mark>zakupów</mark></h1><p class="lead">Wpisz PIN, żeby otworzyć listę rodziny.</p></div></section>
+  // (white, centred and calm: the mark, a big heading, room for the code, round soft keys)
+  app.innerHTML = `<div class="pin"><div class="pc">
+    <div class="pmark">${LOGO}</div>
+    <h1>Wpisz PIN</h1><p class="psub">Czterocyfrowy kod do wspólnej listy zakupów.</p>
     <div class="cells" aria-live="polite" aria-label="Wpisane cyfry">${'<span><i></i></span>'.repeat(4)}</div>
-    <div class="keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'del'].map((k, i) => k === '' ? '<span></span>' : `<button type="button" data-k="${k}" style="--i:${i}" aria-label="${k === 'del' ? 'Usuń cyfrę' : k}">${k === 'del' ? ic('back', 2) : k}</button>`).join('')}</div>
-    <p class="pmsg" role="status"></p></div>`;
+    <p class="pmsg" role="status"></p>
+    <div class="keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'del'].map((k, i) => k === '' ? '<span></span>' : `<button type="button" data-k="${k}" style="--i:${i}" aria-label="${k === 'del' ? 'Usuń cyfrę' : k}">${k === 'del' ? ic('back', 1.8) : k}</button>`).join('')}</div></div></div>`;
   const cells = app.querySelector('.cells'), msg = app.querySelector('.pmsg');
   const paint = () => cells.querySelectorAll('span').forEach((c, i) => c.classList.toggle('f', i < pin.length));
   const press = async k => { if (busy) return;
