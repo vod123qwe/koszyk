@@ -1,0 +1,11 @@
+{
+  "name": "Koszyk",
+  "short_name": "Koszyk",
+  "description": "Wspólna lista zakupów: dyktujesz, a produkty same układają się jak w sklepie.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "pl",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

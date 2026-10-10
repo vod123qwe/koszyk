@@ -1,0 +1,31 @@
+{
+  "name": "Koszyk",
+  "tagline": "Wspólna lista zakupów: dyktujesz, a produkty same układają się jak w sklepie",
+  "description": "PWA dla rodziny (kilka telefonów, wspólna lista). Przytrzymujesz mikrofon i mówisz, AI (Claude) poprawia i rozdziela produkty, dopytuje tylko w wątpliwych. Lista układa się po działach w kolejności wybranego sklepu (Lidl, Biedronka, Kaufland) i uczy się z tego, jak odhaczasz. Promocje produktów z listy z gazetek (ding.pl), podpowiedzi „Może też?”. Node na Render, PIN + token, Gist.",
+  "category": "personal",
+  "status": "wip",
+  "type": "web-server",
+  "tags": [
+    "pwa",
+    "zakupy",
+    "dyktowanie",
+    "promocje"
+  ],
+  "tech": [
+    "html",
+    "js",
+    "node",
+    "claude"
+  ],
+  "launch": {
+    "dev": "node server.js",
+    "devUrl": "http://localhost:8820"
+  },
+  "links": {
+    "repo": "https://github.com/vod123qwe/koszyk",
+    "live": ""
+  },
+  "icon": "cart",
+  "accent": "#0E4F47",
+  "notes": "10.10.2026: v3 w prywatnym repo vod123qwe/koszyk + render.yaml; dane w prywatnym Gist. Czeka: Blueprint na Render (Jarek), potem live URL. AI na razie off (parser lokalny)."
+}
