@@ -7,7 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { localParse } = require('./lib/local-parse');
 const { aiParse, aiOn } = require('./lib/ai');
-const { promosFor } = require('./lib/promos');
+const { promosFor, leaflet } = require('./lib/promos');
 
 const PORT = process.env.PORT || 8820;
 const PIN = process.env.KOSZYK_PIN || '1234';
@@ -85,6 +85,8 @@ const server = http.createServer(async (req, res) => {
       const onList = Object.values(db.collections.items).filter(i => !i.deleted && !i.done).map(i => i.name);
       let out = null; try { out = await aiParse(text, { known, onList }); } catch (e) { console.error('[koszyk] ai:', e.message); }
       return send(res, 200, out || localParse(text)); }
+    if (p === '/api/leaflet' && req.method === 'POST') {   // cała bieżąca gazetka sieci (spożywka i drogeria)
+      const b = await readBody(req); return send(res, 200, { store: b.store, items: await leaflet(String(b.store || '')) }); }
     if (p === '/api/promos' && req.method === 'POST') {   // promocje dla nazw produktów w wybranej sieci
       const b = await readBody(req); return send(res, 200, { store: b.store, promos: await promosFor(String(b.store || ''), Array.isArray(b.names) ? b.names : []) }); }
     return send(res, 404, { error: 'not found' });
