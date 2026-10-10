@@ -357,3 +357,30 @@ svg { display: block; }
 .cmp .hmore summary::-webkit-details-marker { display: none; } .cmp .hmore summary::after { content: '+'; font-size: 18px; font-weight: 500; } .cmp .hmore[open] summary::after { content: '−'; }
 .cmp .hmore .hs { padding-left: 0; padding-right: 0; }
 :root.dark .cmp .hmore summary { color: #8fe0b8; }
+
+/* no top bar: the leaflets and the menu sit level with the big heading */
+.hrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hrow .acts { display: flex; gap: 8px; flex: none; margin-top: clamp(0px, 1.2vw, 6px); }
+.hero .c { padding-top: 26px; }
+/* "N produktów z listy taniej": a banner like the deal panels, with air above and below */
+.pband { border: 0; background: none; padding: 18px 0 6px; }
+.pband .c { min-height: 0; }
+.pband .pbx { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px 11px 10px; border-radius: 12px; background: var(--mint); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--promo) 22%, transparent); }
+/* the shop tabs: "najtaniej" sits on the top edge, so every name lines up */
+.stores { border-top: 0; }
+.stores .c { align-items: flex-end; }
+.stbs { padding-top: 10px; }
+.stb, .addSt, .ordBtn { position: relative; border-top: 1px solid var(--line); height: 58px; }
+.stb { flex-direction: row; }
+.stb .cheap { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; animation: none; }
+@media (max-width: 440px) { .gzb { width: 42px; padding: 0; justify-content: center; } .gzb span { display: none; } }
+
+/* "Promocje się zmieniły" */
+.pchh { position: static; display: flex; justify-content: space-between; padding: 16px 20px 8px; border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pcr { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px 8px 20px; border-bottom: 1px solid var(--line); transition: opacity .25s; }
+.pcr .em { width: 40px; height: 40px; border-radius: 12px; font-size: 20px; }
+.pcr .pct { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; } .pcr .pct b { font-size: 15.5px; font-weight: 600; } .pcr .pct small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcr .pcp { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px; } .pcr .pcp b { font-weight: 650; color: var(--cta); } .pcr .pcp s { color: var(--muted); } .pcr .pcp small { font-size: 11px; color: var(--muted); }
+.pcr .pcx { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); box-shadow: inset 0 0 0 1.4px var(--line); } .pcr .pcx svg { width: 16px; height: 16px; }
+.pcr.gone { opacity: .45; } .pcr.gone .pct b { text-decoration: line-through; }
+.pcb { padding: 18px 20px 4px; } .pcb .ok { width: 100%; height: 52px; border-radius: 14px; background: var(--cta); color: var(--ctaInk); font-size: 16px; font-weight: 650; }

@@ -118,8 +118,31 @@ function promosSoon() { clearTimeout(prT); prT = setTimeout(async () => {
   const s = storeOf(store()); if (!s.ding.length) { PR = {}; return; }
   const open = openItems().map(i => i.name), usual = Object.values(C.history).sort((a, b) => b.count - a.count).slice(0, 12).map(h => h.name);
   const names = [...new Set([...open, ...usual])], key = s.id + '|' + names.join('|'); if (key === prKey) return; prKey = key;
-  try { const r = await api('/api/promos', { store: s.id, names }); if (r.store === store()) { PR = r.promos || {}; render(); } } catch { } }, 900); }
+  try { const r = await api('/api/promos', { store: s.id, names }); if (r.store === store()) { PR = r.promos || {}; render(); if (!promoChecked) setTimeout(promoChanges, 700); else snapshotPromos(); } } catch { } }, 900); }
 const bestOffer = name => (PR[name] || [])[0];
+// ---------- promotions that ended or began since the last visit: said once, when you come back ----------
+// (each product on the list remembers the cut it had in this shop; nothing is removed unless you tap the cross)
+let promoChecked = false;
+const realDeal = name => (PR[name] || []).find(o => o.oldPrice && o.oldPrice > o.price);
+const promoSnap = (o, sid) => o ? { store: sid, name: o.name, price: o.price, oldPrice: o.oldPrice, until: o.until } : null;
+function snapshotPromos() { const sid = store();
+  for (const it of openItems()) { const now = promoSnap(realDeal(it.name), sid), was = it.promo && it.promo.store === sid ? it.promo : it.promo === null ? null : undefined;
+    if (JSON.stringify(now) !== JSON.stringify(was === undefined ? '-' : was)) put('items', { ...C.items[it.id], promo: now }, true); } }
+function promoChanges() { if (promoChecked || !mounted || !token) return; promoChecked = true;
+  const sid = store(), ended = [], fresh = [];
+  for (const it of openItems()) { const now = realDeal(it.name), was = it.promo && it.promo.store === sid ? it.promo : null;
+    if (was && !now) ended.push({ it, was });
+    else if (now && it.promo === null) fresh.push({ it, now }); }
+  snapshotPromos();
+  if (!ended.length && !fresh.length) return;
+  const row = (it, o, tail) => `<div class="pcr" data-id="${it.id}"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="pct"><b>${esc(it.name)}</b><small>${esc(o.name)}${o.size ? ' · ' + esc(o.size) : ''}</small></span>${tail}</div>`;
+  const close = sheet(`<h3>Promocje się zmieniły</h3><p class="sub">Od ostatniej wizyty w ${IN[sid] || storeOf(sid).name}. Nic nie usuwamy sami, zdecyduj, co zostaje na liście.</p>
+    ${ended.length ? `<div class="lh pchh">Skończyły się<span>${ended.length}</span></div>${ended.map(({ it, was }) => row(it, was, `<span class="pcp"><s>${zl(was.price)}</s><small>teraz bez promocji</small></span><button class="pcx" type="button" data-rm="${it.id}" aria-label="Usuń z listy: ${esc(it.name)}">${ic('x', 2)}</button>`)).join('')}` : ''}
+    ${fresh.length ? `<div class="lh pchh">Nowe promocje<span>${fresh.length}</span></div>${fresh.map(({ it, now }) => row(it, now, `<span class="pcp">${pct(now) ? `<span class="pill">${pct(now)}</span>` : ''}<b>${zl(now.price)}</b></span>`)).join('')}` : ''}
+    <div class="pcb"><button type="button" class="ok">W porządku</button></div>`, sh => {
+    sh.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { const r = b.closest('.pcr'), it = C.items[b.dataset.rm]; if (!it) return;
+      const gone = r.classList.toggle('gone'); put('items', { ...it, deleted: gone }, true); b.innerHTML = gone ? ic('up', 2) : ic('x', 2); b.setAttribute('aria-label', (gone ? 'Przywróć: ' : 'Usuń z listy: ') + it.name); vib(8); render(); });
+    sh.querySelector('.ok').onclick = () => close(); }); }
 let CMP = {}, cmpKey = '', cmpT = 0;
 function compareSoon() { clearTimeout(cmpT); cmpT = setTimeout(async () => {
   const names = [...new Set(openItems().map(i => i.name))], key = names.join('|') + '@' + myIds().join(','); if (key === cmpKey) return; cmpKey = key;
@@ -261,7 +284,7 @@ function renderList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
-  if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><span class="pill">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div>`);
+  if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="pbx"><span class="pill">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
   if (!all.length) { renderEmpty(wrap); return; }
   for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
@@ -477,10 +500,9 @@ function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(
 let mounted = false;
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
-    <header class="top"><div class="c">${LOGO}<span class="tag"><i></i><span>Lista<br>zakupów</span></span><span class="sp"></span>
+    <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
       <button class="gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
-      <button class="round" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></header>
-    <section class="hero"><div class="c"><h1 id="h1"></h1><p id="lead"></p></div></section>
+      <button class="round" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
     <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div><button class="addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button><button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="chips" id="chips" hidden></div>
