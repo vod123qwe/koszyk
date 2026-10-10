@@ -37,6 +37,7 @@ const I = {
   grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>', moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/>',
   back: '<path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] || I.box}</svg>`;
@@ -295,7 +296,12 @@ const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}"
 function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
   for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
   sheet(`<h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} spożywczych i drogeryjnych w tym tygodniu. Dotknij, żeby dopisać do listy.</p>
-    <div class="leaf">${order.filter(c => by[c]).map(c => `<section class="lg"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}</div>`, sh => wireAdds(sh, true)); }
+    <label class="lsearch">${ic('search', 2)}<input type="search" placeholder="Szukaj w gazetce…" autocomplete="off" aria-label="Szukaj w gazetce"></label>
+    <div class="leaf">${order.filter(c => by[c]).map(c => `<section class="lg"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}<p class="wnone lnone" hidden>Nic takiego w tej gazetce.</p></div>`, sh => { wireAdds(sh, true);
+    // (filter as you type; empty aisles fold away)
+    const inp = sh.querySelector('.lsearch input'); inp.oninput = () => { const q = norm(inp.value); let any = 0;
+      sh.querySelectorAll('.lg').forEach(g => { let n = 0; g.querySelectorAll('.ep').forEach(b => { const on = !q || norm(b.dataset.add).includes(q); b.hidden = !on; n += on; }); g.hidden = !n; any += n; });
+      sh.querySelector('.lnone').hidden = !!any; }; }); }
 const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => leafletSheet(b.dataset.all));
 // (under a list in progress: this shop's offers, on grey, one tap to add)
 function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
