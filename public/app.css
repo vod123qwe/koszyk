@@ -422,3 +422,33 @@ svg { display: block; }
 .dlp .kbs, .pcp .kbs, .ep .dp .kbs { margin-bottom: 2px; }
 /* wide screens: the box sits in the same column as the list */
 @media (min-width: 672px) { .cmp { max-width: calc(var(--w) - 40px); margin-left: auto; margin-right: auto; } }
+
+/* the bottom field is a button that opens the adder */
+.field.opener { display: flex; align-items: center; gap: 10px; text-align: left; color: var(--faint); cursor: text; } .field.opener svg { width: 18px; height: 18px; color: var(--muted); } .field.opener span { font-size: 16px; color: var(--muted); }
+/* the adder: tall, iOS-like, the field above the keyboard */
+.adder { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); z-index: 30; background: rgba(17,17,22,0); transition: background .3s; }
+.adder.show { background: rgba(17,17,22,.32); }
+.ad-in { position: absolute; left: 50%; bottom: 0; width: min(640px, 100%); height: calc(100% - 44px); display: flex; flex-direction: column; border-radius: 22px 22px 0 0; background: var(--bg); box-shadow: 0 -10px 40px rgba(0,0,0,.18); transform: translate(-50%, 100%); transition: transform .42s var(--ease); }
+.adder.show .ad-in { transform: translate(-50%, 0); }
+.ad-top { position: relative; display: flex; align-items: center; gap: 10px; padding: 14px 12px 10px 20px; border-bottom: 1px solid var(--line); }
+.ad-top .grab { position: absolute; left: 50%; top: 6px; width: 38px; height: 5px; margin-left: -19px; border-radius: 3px; background: var(--faint); }
+.ad-top h3 { margin: 6px 0 0; font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+.ad-msg { flex: 1; min-width: 0; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--promo); opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .3s var(--ease); }
+.ad-msg.show { opacity: 1; transform: none; }
+.ad-done { margin-top: 6px; height: 38px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 14.5px; font-weight: 650; }
+.ad-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 6px; display: flex; flex-direction: column; }
+.ad-list > :first-child { margin-top: auto; }
+.adh { padding: 16px 20px 6px; font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.adr { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 14px 6px 20px; text-align: left; transition: background .15s; flex: none; }
+.adr:active { background: var(--soft); } @media (hover: hover) { .adr:hover { background: var(--soft); } }
+.adr .em { width: 38px; height: 38px; border-radius: 11px; font-size: 20px; }
+.adr .adn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 16px; font-weight: 500; } .adr .adn small { font-size: 12px; font-weight: 500; color: var(--muted); }
+.adr mark { background: color-mix(in srgb, var(--aqua) 45%, transparent); color: inherit; border-radius: 2px; }
+.adr .ada { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.4px var(--line); color: var(--cta); flex: none; } .adr .ada svg { width: 16px; height: 16px; }
+.adr.on { opacity: .55; } .adr.on .ada { background: var(--cta); color: var(--ctaInk); box-shadow: none; animation: pop .35s var(--ease); }
+.adr.raw .em { background: var(--mint); color: var(--cta); } .adr.raw .em svg { width: 18px; height: 18px; } .adr.raw .adn { font-weight: 650; }
+.ad-empty { margin: auto 20px 10px; font-size: 14px; color: var(--muted); text-align: center; }
+.ad-bar { display: flex; gap: 8px; padding: 10px 12px calc(10px + var(--safeB)); border-top: 1px solid var(--line); background: var(--bg); }
+.ad-bar input { flex: 1; min-width: 0; height: 50px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--soft); font: inherit; font-size: 17px; color: var(--ink); outline: none; }
+.ad-bar input:focus { box-shadow: inset 0 0 0 1.6px var(--cta); }
+.ad-send { width: 50px; height: 50px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--cta); color: var(--ctaInk); } .ad-send svg { width: 20px; height: 20px; }

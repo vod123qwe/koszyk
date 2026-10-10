@@ -189,8 +189,8 @@ async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
   hear(text, 'think');
   try { const r = await api('/api/parse', { text }); const added = addItems(r.items || [], r.remove || []);
-    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); }
-  catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (added.length) snack(added, text, 'Bez sieci, dodano'); } } }
+    hear(null); if (adderOpen) return added; const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); return added; }
+  catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (!adderOpen && added.length) snack(added, text, 'Bez sieci, dodano'); return added; } } }
 
 // ---------- the voice: hold the button and speak; let go and it goes on the list ----------
 // (the browser may end recognition by itself, after a pause or a hiccup: while the button is held it starts again;
@@ -198,7 +198,7 @@ async function addText(text) {
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, heard = '', interim = '', held = false, finished = true, downAt = 0, finishT = 0;
 function startVoice() {
-  if (!SR) { toast('Ta przeglądarka nie dyktuje. Użyj mikrofonu z klawiatury.'); $('#q').focus(); return; }
+  if (!SR) { toast('Ta przeglądarka nie dyktuje. Użyj mikrofonu z klawiatury.'); openAdder(); return; }
   if (held) return;
   heard = ''; interim = ''; held = true; finished = false; downAt = Date.now(); clearTimeout(finishT);
   listen(); $('.mic').classList.add('rec'); hear(null, 'rec'); vib(10); }
@@ -221,6 +221,50 @@ function hear(text, mode) { const el = $('.hear'); if (!el) return;
   el.classList.add('show'); el.classList.toggle('think', mode === 'think');
   el.querySelector('small .lbl').textContent = mode === 'think' ? 'Rozumiem…' : 'Słucham';
   const p = el.querySelector('p'); p.textContent = text || 'Mów, czego potrzebujesz…'; p.classList.toggle('ph', !text); }
+// ---------- adding by typing: a tall sheet that stays open, the field right above the keyboard ----------
+// (empty: what you bought lately and what's popular; typing: your history, popular products and this shop's offers that fit)
+let adderOpen = false, adderMsgT = 0;
+const adderEl = () => $('.adder');
+function openAdder(prefill = '') { const el = adderEl(), q = $('#adQ'); if (!el) return;
+  adderOpen = true; el.hidden = false; requestAnimationFrame(() => el.classList.add('show'));
+  q.value = prefill; q.focus(); if (prefill) q.setSelectionRange(prefill.length, prefill.length);
+  fitAdder(); adderRender(); }
+function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
+// (iOS keeps the layout height when the keyboard is up: follow the visible part of the screen instead)
+function fitAdder() { const vv = window.visualViewport, el = adderEl(); if (!el) return; el.style.setProperty('--vvh', (vv ? vv.height : innerHeight) + 'px'); el.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px'); }
+if (window.visualViewport) { visualViewport.addEventListener('resize', () => adderOpen && fitAdder()); visualViewport.addEventListener('scroll', () => adderOpen && fitAdder()); }
+function adderSay(t) { const m = $('.ad-msg'); if (!m) return; m.textContent = t; m.classList.add('show'); clearTimeout(adderMsgT); adderMsgT = setTimeout(() => m.classList.remove('show'), 2600); }
+const hl = (name, q) => { if (!q) return esc(name); const i = norm(name).indexOf(q); return i < 0 ? esc(name) : esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + q.length)) + '</mark>' + esc(name.slice(i + q.length)); };
+function adderRender() { const box = $('#adList'); if (!box) return; const raw = $('#adQ').value.trim(), q = norm(raw), onList = new Set(openItems().map(i => norm(i.name)));
+  const hist = Object.values(C.history).filter(looksLikeProduct), common = (CAT.common || []).map(([name, cat]) => ({ name, cat }));
+  const row = (x, tag) => { const on = onList.has(norm(x.name)), o = !on && leafHit(x.name, x.cat), deal = o && o.oldPrice && o.oldPrice > o.price;
+    return `<button class="adr${on ? ' on' : ''}" type="button" data-name="${esc(x.name)}" data-cat="${esc(x.cat || '')}"><span class="em" style="--tile:var(--t-${x.cat || 'dom'})">${esc(x.emoji || emojiGuess(x.name) || CAT_EMOJI[x.cat] || '•')}</span>
+      <span class="adn"><span class="adt">${hl(x.name, q)}</span>${tag ? `<small>${tag}</small>` : ''}</span>${deal ? `<span class="pill">${pct(o)}</span>` : ''}<span class="ada" aria-hidden="true">${ic(on ? 'check' : 'plus', 2.2)}</span></button>`; };
+  const sec = (title, list, tag) => list.length ? `<div class="adh">${title}</div>${list.map(x => row(x, tag && tag(x))).join('')}` : '';
+  let html;
+  if (!q) { const recent = hist.filter(h => !onList.has(norm(h.name))).sort((a, b) => b.lastAt - a.lastAt).slice(0, 10), seen = new Set(recent.map(h => norm(h.name)));
+    const popular = common.filter(c => !onList.has(norm(c.name)) && !seen.has(norm(c.name))).slice(0, 24);
+    html = sec('Ostatnio kupowane', recent, h => h.count > 1 ? `kupowane ${h.count} razy` : '') + sec('Popularne', popular);
+    if (!html) html = '<p class="ad-empty">Wpisz, czego potrzebujesz. Możesz od razu z ilością, np. „mleko 2 litry”.</p>'; }
+  else { const fits = n => { const w = norm(n); return w.startsWith(q) || w.includes(' ' + q); }, seen = new Set(), pick = [];
+    const add = (x, from) => { const k = norm(x.name); if (seen.has(k) || !fits(x.name)) return; seen.add(k); pick.push({ ...x, from }); };
+    hist.sort((a, b) => b.count - a.count).forEach(h => add(h, 'mine')); common.forEach(c => add(c, 'pop'));
+    (EP[store()] || []).filter(o => o.oldPrice && o.oldPrice > o.price).slice(0, 200).forEach(o => pick.length < 14 && add({ name: o.name, cat: o.cat, emoji: o.emoji }, 'offer'));
+    const exact = pick.some(p => norm(p.name) === q);
+    html = (exact ? '' : `<button class="adr raw" type="button" data-raw="1"><span class="em">${ic('plus', 2.2)}</span><span class="adn">Dodaj „${esc(raw)}”<small>${/\d/.test(raw) || raw.split(/\s+/).length > 2 ? 'rozdzielę produkty i ilości' : 'tak, jak wpisałeś'}</small></span></button>`)
+      + pick.slice(0, 14).map(x => row(x, x.from === 'mine' ? 'z Twoich zakupów' : x.from === 'offer' ? `w promocji w ${IN[store()]}` : '')).join(''); }
+  box.innerHTML = html; box.scrollTop = q ? box.scrollHeight : 0;
+  box.querySelectorAll('[data-name]').forEach(b => b.onclick = () => { if (b.classList.contains('on')) { adderSay(`${b.dataset.name} już jest na liście`); return; }
+    const added = addItems([{ name: b.dataset.name, category: b.dataset.cat || undefined }]); vib(8); if (added.length) adderSay(`Dodano: ${b.dataset.name}`);
+    $('#adQ').value = ''; adderRender(); });
+  const r = box.querySelector('[data-raw]'); if (r) r.onclick = () => submitText(raw); }
+// (typed text goes through the same parser as the voice; the sheet stays open for the next one)
+async function submitText(t) { t = t.trim(); if (!t) return; const learned = editFrom ? learnFromEdit(editFrom, t) : []; editFrom = null;
+  $('#adQ').value = ''; adderRender();
+  const added = await addText(t);
+  if (adderOpen && added) adderSay(added.length ? `Dodano: ${added.map(i => i.name + (qtyText(i) ? ' ' + qtyText(i) : '')).join(', ')}` : (added.dupes || []).length ? `Już jest na liście: ${added.dupes.join(', ')}` : 'Nic nowego');
+  if (learned.length) setTimeout(() => toast(`Zapamiętam: ${learned.map(([a, b]) => `„${a}” to ${b}`).join(', ')}`), adderOpen ? 2800 : 5300);
+  if (adderOpen) adderRender(); }
 // (the snackbar after adding: what landed on the list, and a way back: "Zmień" puts the words in the field, the bin takes them off)
 let snackT = 0, editFrom = null;
 function snack(added, text, lead = 'Dodano', gone = []) { const el = $('.snack'); if (!el) return; $('.toast')?.classList.remove('show');
@@ -228,7 +272,7 @@ function snack(added, text, lead = 'Dodano', gone = []) { const el = $('.snack')
   const hide = () => { el.classList.remove('show'); clearTimeout(snackT); };
   const drop = () => { added.forEach(a => { const cur = C.items[a.id]; if (cur && !cur.deleted) put('items', { ...cur, deleted: true }, true); lit.delete(a.id); }); render(); compareSoon(); hide(); };
   el.querySelector('[data-s=edit]').textContent = 'Zmień'; el.querySelector('[data-s=del]').hidden = false;
-  el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; const q = $('#q'); q.value = text; $('#f').classList.add('has'); q.focus(); q.setSelectionRange(text.length, text.length); };
+  el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; openAdder(text); };
   const del = el.querySelector('[data-s=del]'); del.setAttribute('aria-label', added.length === 1 ? `Usuń: ${added[0].name}` : 'Usuń dodane');
   del.onclick = () => { drop(); vib(10); toast(added.length === 1 ? 'Usunięto z listy' : `Usunięto ${added.length}`); };
   const run = ms => { clearTimeout(snackT); snackT = setTimeout(hide, ms); };
@@ -525,18 +569,19 @@ function mount() {
     <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div><button class="addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button><button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="chips" id="chips" hidden></div>
-      <div class="c bar"><form class="field" id="f"><input id="q" placeholder="Dopisz produkt…" autocomplete="off" enterkeyhint="done"><button class="send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form>
+      <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
       <button class="mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
-    <div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+    <div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
   addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
   $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet; document.querySelector('.ordBtn').onclick = orderSheet;
   document.querySelector('.addSt').onclick = storesSheet;
-  const q = $('#q'), f = $('#f'); q.oninput = () => f.classList.toggle('has', !!q.value.trim());
-  f.onsubmit = e => { e.preventDefault(); const t = q.value; q.value = ''; f.classList.remove('has');
-    const learned = editFrom ? learnFromEdit(editFrom, t) : []; editFrom = null;
-    addText(t).then(() => { if (learned.length) setTimeout(() => toast(`Zapamiętam: ${learned.map(([a, b]) => `„${a}” to ${b}`).join(', ')}`), 5300); }); };
-  q.addEventListener('input', () => { if (!q.value.trim()) editFrom = null; });
+  $('#f').onclick = () => openAdder();
+  const aq = $('#adQ'); aq.oninput = () => { if (!aq.value.trim()) editFrom = null; adderRender(); };
+  $('#adF').onsubmit = e => { e.preventDefault(); submitText(aq.value); };
+  $('.ad-done').onclick = closeAdder; $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
+  $('#adList').addEventListener('pointerdown', e => { if (e.target.closest('button')) e.preventDefault(); });   // (keep the keyboard up while tapping suggestions)
+  addEventListener('keydown', e => { if (e.key === 'Escape' && adderOpen) closeAdder(); });
   const mic = $('#mic'); mic.addEventListener('pointerdown', e => { e.preventDefault(); startVoice(); }); mic.addEventListener('contextmenu', e => e.preventDefault());
   mic.addEventListener('lostpointercapture', stopVoice); mic.addEventListener('pointerdown', e => { try { mic.setPointerCapture(e.pointerId); } catch { } });
   addEventListener('pointerup', stopVoice); addEventListener('pointercancel', stopVoice); addEventListener('blur', stopVoice);
