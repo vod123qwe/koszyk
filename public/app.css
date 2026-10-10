@@ -550,3 +550,10 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 @media (hover: hover) { .frq__chip:hover { background: var(--soft); } }
 .frq__plus { background: var(--soft); color: var(--ink); }
 :root.dark .frq__plus { background: var(--soft); }
+/* "N produktów z listy taniej": a quiet grey status; only the % mark keeps the green */
+.pband .banner { background: var(--soft); box-shadow: none; color: var(--muted); font-weight: var(--fw-medium); padding: 10px 14px 10px 10px; }
+.pband .banner .badge--promo { flex: none; }
+/* rows: more air top and bottom, more still when a row carries a deal or extra lines */
+.line .c { padding-top: 14px; padding-bottom: 14px; min-height: 72px; }
+.row:has(.deal) .line .c, .row:has(.subs) .line .c, .row:has(.meta) .line .c { padding-top: 18px; padding-bottom: 18px; }
+.line .txt .deal, .line .txt .subs { margin-top: 10px; }
