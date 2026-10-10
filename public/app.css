@@ -428,3 +428,14 @@ svg { display: block; }
 .cmpr.off { opacity: .55; } @media (hover: hover) { button.cmpr:hover { background: var(--soft); } }
 .stbs .addSt { flex: none; }
 .stb { padding: 0 var(--s-4); }
+/* shop pills: a bit more room left and right (still three on a phone) */
+.stb { padding: 0 var(--s-5); gap: 10px; }
+@media (max-width: 400px) { .stb { padding: 0 18px; gap: 9px; } }
+/* the deal under a product: discount + the exact name on top, the terms and the price below */
+.deal { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "pct name name" "pct kinds price"; column-gap: var(--s-2); row-gap: 5px; align-items: center; width: 100%; padding: var(--s-2) var(--s-3) var(--s-2) var(--s-2); }
+.deal > .badge--promo { grid-area: pct; align-self: start; margin-top: 1px; }
+.deal .dn { display: contents; }
+.deal .dnn { grid-area: name; -webkit-line-clamp: 2; line-height: 1.3; }
+.deal .dn .badges { grid-area: kinds; margin: 0; }
+.deal .dp { grid-area: price; justify-self: end; margin: 0; }
+.deal .dp, .deal .dp b, .deal .dp s { white-space: nowrap; } .deal .dn .badges { min-width: 0; }
