@@ -295,7 +295,7 @@ const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}"
 function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
   for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
   sheet(`<h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} spożywczych i drogeryjnych w tym tygodniu. Dotknij, żeby dopisać do listy.</p>
-    <div class="leaf">${order.filter(c => by[c]).map(c => `<div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}`).join('')}</div>`, sh => wireAdds(sh, true)); }
+    <div class="leaf">${order.filter(c => by[c]).map(c => `<section class="lg"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}</div>`, sh => wireAdds(sh, true)); }
 const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => leafletSheet(b.dataset.all));
 // (under a list in progress: this shop's offers, on grey, one tap to add)
 function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
