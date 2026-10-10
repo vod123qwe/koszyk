@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { localParse } = require('./lib/local-parse');
 const { aiParse, aiOn } = require('./lib/ai');
 const { promosFor, leaflet } = require('./lib/promos');
+const CAT_STORES = () => require('./public/catalog.json').stores.map(s => s.id);
 
 const PORT = process.env.PORT || 8820;
 const PIN = process.env.KOSZYK_PIN || '1234';
@@ -98,5 +99,8 @@ const server = http.createServer(async (req, res) => {
   db = g && l ? (g.rev >= l.rev ? g : l) : (g || l || emptyDb());
   if (!db.tokens) db.tokens = []; for (const c of COLLECTIONS) if (!db.collections[c]) db.collections[c] = {};
   saveLocal();
+  // (the leaflets load right away and then every 6 hours, so the first look at the offers is instant)
+  const warm = () => Promise.all(CAT_STORES().map(id => leaflet(id).catch(() => { }))).then(() => console.log('[koszyk] gazetki gotowe'));
+  setTimeout(warm, 1500); setInterval(warm, 6 * 3600 * 1000 + 60000).unref();
   server.listen(PORT, () => console.log(`[koszyk] http://localhost:${PORT}  (gist: ${GIST_ID ? 'ON' : 'off'}, AI: ${aiOn ? 'ON' : 'off'})`));
 })();
