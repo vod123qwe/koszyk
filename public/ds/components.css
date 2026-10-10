@@ -39,7 +39,9 @@
 @media (hover: hover) { .chip:hover { background: var(--soft); } }
 .chip small { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); opacity: .6; }
 .chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sc, var(--faint)); flex: none; }
-.chip--on, .chip--on:hover { background: var(--ink); color: var(--bg); box-shadow: none; }
+.chip--on, .chip--on:hover { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
+.chip--on .dot { box-shadow: 0 0 0 2px var(--ctaInk); }
+.chip .flag { box-shadow: 0 0 0 2px var(--bg); }
 .chip--tile { background: var(--tile, var(--soft)); box-shadow: none; }
 .chip--sm { height: var(--h-sm); padding: 0 var(--s-3); font-size: 13px; }
 /* a tag riding on the top edge of a chip ("najtaniej") */

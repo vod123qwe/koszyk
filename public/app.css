@@ -411,7 +411,7 @@ svg { display: block; }
 .stores .c { display: flex; align-items: center; gap: var(--s-2); }
 .stbs { flex: 1; min-width: 0; display: flex; gap: var(--s-2); overflow-x: auto; scrollbar-width: none; padding: 12px 2px 4px; margin: -12px -2px -4px; }
 .stb { height: var(--h-lg); padding: 0 var(--s-5); font-size: var(--fs-md); }
-.stb.chip--on .dot { box-shadow: 0 0 0 2px var(--ink); }
+.stb.chip--on .dot { box-shadow: 0 0 0 2px var(--ctaInk); }
 .stores .addSt, .stores .ordBtn { width: var(--h-lg); height: var(--h-lg); color: var(--muted); }
 .pband { padding: var(--s-4) 0 var(--s-2); }
 .sec:first-of-type .h .c, .pband + .sec .h .c { padding-top: var(--s-5); }

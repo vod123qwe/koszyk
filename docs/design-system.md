@@ -29,6 +29,7 @@ Apka stoi na małym design systemie. Zasada: **elementy są naczyniami połączo
 ## Zasady
 
 - **Hierarchia akcji:** jedna akcja główna na ekranie (`primary`, zielona: mikrofon, Gotowe, W porządku). Pozostałe `secondary` (obrys): Gazetki, menu, dodaj sklep.
+- **Wybrane = zieleń akcji:** aktywna pigułka (`chip--on`) ma tło `--cta`, jak mikrofon.
 - **Kolor znaczy rolę:** zielony = promocja, żółty = warunek „kilka sztuk”, niebieski = karta lub aplikacja, fiolet = limit.
 - **Nowy element:** najpierw komponent i wariant w `components.css` i w `ds.html`, potem użycie w widoku. W `app.css` nie definiujemy kolorów ani wymiarów kontrolek.
 - **Każda informacja raz:** warunki promocji są w rzędzie etykiet pod nazwą; przy cenie stoi tylko rabat.

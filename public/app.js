@@ -40,6 +40,7 @@ const I = {
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
   paper: '<path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2M8.5 8h4.5M8.5 11.5h4.5M8.5 15h3"/>',
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] || I.box}</svg>`;
@@ -589,6 +590,7 @@ function menuSheet() { const t = theme();
   const close = sheet(`<h3>Koszyk</h3><div class="list">
     <button data-a="order">${ic('grip')}Kolejność działów w sklepie</button>
     <button data-a="shops">${ic('bag')}Moje sklepy</button>
+    <button data-a="ds">${ic('grid')}Design system</button>
     <button data-a="words">${ic('book')}Słownik dyktowania</button>
     <button data-a="clear">${ic('check')}Usuń kupione z listy</button>
     ${Object.values(C.items).some(i => !i.deleted) ? `<button data-a="wipe" class="dz">${ic('trash')}Wyczyść całą listę</button>` : ''}
@@ -597,6 +599,7 @@ function menuSheet() { const t = theme();
     sh.querySelector('[data-a=order]').onclick = () => { close(); setTimeout(orderSheet, 380); };
     sh.querySelector('[data-a=words]').onclick = () => { close(); setTimeout(wordsSheet, 380); };
     sh.querySelector('[data-a=shops]').onclick = () => { close(); setTimeout(storesSheet, 380); };
+    sh.querySelector('[data-a=ds]').onclick = () => { close(); window.open('/ds.html', '_blank'); };
     const wp = sh.querySelector('[data-a=wipe]'); if (wp) wp.onclick = () => { close(); setTimeout(clearAllSheet, 380); };
     sh.querySelector('[data-a=clear]').onclick = () => { Object.values(C.items).filter(i => i.done && !i.deleted).forEach(i => put('items', { ...i, deleted: true }, true)); render(); close(); };
     sh.querySelector('[data-a=theme]').onclick = () => { const n = t === 'system' ? 'dark' : t === 'dark' ? 'light' : 'system'; localStorage.setItem('koszyk.theme', n); applyTheme(); close(); setTimeout(menuSheet, 380); };
