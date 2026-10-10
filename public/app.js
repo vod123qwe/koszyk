@@ -304,7 +304,7 @@ function adderRender() { const box = $('#adList'); if (!box) return; const raw =
   else { const fits = n => { const w = norm(n); return w.startsWith(q) || w.includes(' ' + q); }, seen = new Set(), pick = [];
     const add = (x, from) => { const k = norm(x.name); if (seen.has(k) || !fits(x.name)) return; seen.add(k); pick.push({ ...x, from }); };
     hist.sort((a, b) => b.count - a.count).forEach(h => add(h, 'mine')); common.forEach(c => add(c, 'pop'));
-    (EP[store()] || []).filter(o => o.oldPrice && o.oldPrice > o.price).slice(0, 200).forEach(o => pick.length < 14 && add({ name: o.name, cat: o.cat, emoji: o.emoji }, 'offer'));
+    (EP[store()] || []).filter(o => o.oldPrice && o.oldPrice > o.price).slice(0, 200).forEach(o => pick.length < 14 && add({ name: !fits(o.name) && o.title && fits(o.title) ? o.title : o.name, cat: o.cat, emoji: o.emoji }, 'offer'));
     const exact = pick.some(p => norm(p.name) === q);
     html = (exact ? '' : `<button class="adr raw" type="button" data-raw="1"><span class="em">${ic('plus', 2.2)}</span><span class="adn">Dodaj „${esc(raw)}”<small>${/\d/.test(raw) || raw.split(/\s+/).length > 2 ? 'rozdzielę produkty i ilości' : 'tak, jak wpisałeś'}</small></span></button>`)
       + pick.slice(0, 14).map(x => row(x, x.from === 'mine' ? 'z Twoich zakupów' : x.from === 'offer' ? `w promocji w ${IN[store()]}` : '')).join(''); }
