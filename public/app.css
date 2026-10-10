@@ -506,3 +506,23 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .frq__chip .e { font-size: 16px; } .frq__chip .badge { margin-left: 2px; }
 .tiles { margin-top: var(--s-7); }
 .frq { justify-items: start; }
+
+/* the adder, full screen: opaque, square corners, the field right above the keyboard (or the bottom edge) */
+.adder { background: var(--bg); }
+.adder.show { background: var(--bg); }
+.ad-in { top: 0; height: 100%; width: 100%; max-width: none; border-radius: 0; box-shadow: none; left: 0; transform: translateY(100%); }
+.adder.show .ad-in { transform: none; }
+.ad-top { padding-top: calc(14px + env(safe-area-inset-top)); }
+.ad-top .grab { display: none; }
+.ad-list, .ad-bar, .ad-top { width: 100%; max-width: var(--w); margin-left: auto; margin-right: auto; }
+.ad-top { max-width: none; } .ad-top > * { }
+.ad-bar { max-width: none; padding-left: max(12px, calc((100vw - var(--w)) / 2 + 12px)); padding-right: max(12px, calc((100vw - var(--w)) / 2 + 12px)); }
+.adder, .adder.show { background: none; }
+/* "Często kupujesz" v2: two independent rows (no column gaps), a small plus on each pill */
+.frq { display: block; grid-auto-flow: unset; grid-template-rows: none; }
+.frq__rows { display: inline-flex; flex-direction: column; gap: var(--s-2); padding-right: var(--gutter); }
+.frq__row { display: flex; gap: var(--s-2); }
+.frq__chip { gap: 7px; padding-right: 6px; }
+.frq__plus { width: 26px; height: 26px; display: grid; place-items: center; margin-left: 2px; border-radius: 50%; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--cta); }
+.frq__plus svg { width: 14px; height: 14px; }
+:root.dark .frq__plus { background: rgba(255,255,255,.08); }

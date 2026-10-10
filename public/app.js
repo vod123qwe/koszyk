@@ -191,8 +191,11 @@ function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))
   for (const [name, cat] of CAT.common || []) { if (out.length >= 18) break; const k = norm(name); if (!seen.has(k) && !onList.has(k)) { seen.add(k); out.push({ name, cat }); } }
   return out.slice(0, 18); }
 function freqHtml() { const picks = freqPicks(); if (!picks.length) return '';
-  return `<section class="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq">${picks.map((p, i) => { const o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0;
-    return `<button type="button" class="chip chip--tile frq__chip" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--tile:var(--t-${p.cat || 'dom'});--i:${i}"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${deal ? ` <span class="badge badge--promo">${pct(o)}</span>` : ''}</button>`; }).join('')}</div></section>`; }
+  // (two rows packed by width, so there are no gaps between pills)
+  const rows = [[], []], w = [0, 0]; picks.forEach((p, i) => { const r = w[0] <= w[1] ? 0 : 1; rows[r].push([p, i]); w[r] += p.name.length + 6; });
+  const pill = ([p, i]) => { const o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0;
+    return `<button type="button" class="chip chip--tile frq__chip" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--tile:var(--t-${p.cat || 'dom'});--i:${i}"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${deal ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; };
+  return `<section class="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq"><div class="frq__rows">${rows.map(r => `<div class="frq__row">${r.map(pill).join('')}</div>`).join('')}</div></div></section>`; }
 function suggestions() {
   const open = new Set(openItems().map(i => norm(i.name))), now = Date.now(), hs = Object.values(C.history).filter(h => !open.has(h.id) && looksLikeProduct(h));
   const promo = hs.map(h => ({ h, p: bestOffer(h.name) || leafHit(h.name, h.cat) })).filter(x => x.p).sort((a, b) => offPct(b.p) - offPct(a.p)).slice(0, 6);   // (on the list's promos or anywhere in this shop's leaflet)
@@ -255,11 +258,20 @@ function hear(text, mode) { const el = $('.hear'); if (!el) return;
 // (empty: what you bought lately and what's popular; typing: your history, popular products and this shop's offers that fit)
 let adderOpen = false, adderMsgT = 0;
 const adderEl = () => $('.adder');
+// (full screen and opaque, so nothing shows through; the page underneath is pinned so iOS can't slide it; the rest of the app is
+//  inert while you type, so the keyboard has no "next field" to jump to)
+let adderY = 0, fitT = 0;
+function pinPage(on) { const b = document.body;
+  if (on) { adderY = scrollY; b.style.position = 'fixed'; b.style.top = -adderY + 'px'; b.style.left = '0'; b.style.right = '0'; }
+  else { b.style.position = b.style.top = b.style.left = b.style.right = ''; scrollTo(0, adderY); } }
+function inertRest(on) { document.querySelectorAll('#app > *').forEach(n => { if (!n.classList.contains('adder') && !n.classList.contains('toast') && !n.classList.contains('snack')) n.inert = on; }); }
 function openAdder(prefill = '') { const el = adderEl(), q = $('#adQ'); if (!el) return;
-  adderOpen = true; el.hidden = false; requestAnimationFrame(() => el.classList.add('show'));
+  adderOpen = true; el.hidden = false; pinPage(true); inertRest(true); requestAnimationFrame(() => el.classList.add('show'));
   q.value = prefill; q.focus(); if (prefill) q.setSelectionRange(prefill.length, prefill.length);
-  fitAdder(); adderRender(); }
-function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; if (focusRow) { focusRow.until = Date.now() + 2500; setTimeout(() => showFocus(true), 380); } editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
+  // (the keyboard slides in over ~half a second: follow it frame by frame for a moment)
+  const t0 = performance.now(); cancelAnimationFrame(fitT); const follow = () => { fitAdder(); if (performance.now() - t0 < 900) fitT = requestAnimationFrame(follow); }; follow();
+  adderRender(); }
+function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; inertRest(false); pinPage(false); if (focusRow) { focusRow.until = Date.now() + 2500; setTimeout(() => showFocus(true), 380); } editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
 // (iOS keeps the layout height when the keyboard is up: follow the visible part of the screen instead)
 function fitAdder() { const vv = window.visualViewport, el = adderEl(); if (!el) return; el.style.setProperty('--vvh', (vv ? vv.height : innerHeight) + 'px'); el.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px'); }
 if (window.visualViewport) { visualViewport.addEventListener('resize', () => adderOpen && fitAdder()); visualViewport.addEventListener('scroll', () => adderOpen && fitAdder()); }
