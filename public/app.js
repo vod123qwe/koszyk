@@ -134,22 +134,22 @@ function suggestions() {
 const openItems = () => Object.values(C.items).filter(i => !i.deleted && !i.done);
 let newIds = new Set(); const ticking = new Set(), lit = new Map();   // (lit: id -> when its highlight started)
 function addItems(list, removes = []) {
-  const added = []; const open = openItems();
+  const added = [], dupes = []; const open = openItems();
   for (const it of list) { const ex = open.find(o => norm(o.name) === norm(it.name));
-    if (ex) { if (it.qty != null) put('items', { ...ex, qty: it.qty, unit: it.unit }, true); continue; }
+    if (ex) { if (it.qty != null) put('items', { ...ex, qty: it.qty, unit: it.unit }, true); dupes.push(ex.name); lit.set(ex.id, Date.now()); continue; }   // (already there: say so and light it up)
     const item = { id: uid(), name: it.name, qty: it.qty ?? null, unit: it.unit ?? null, cat: CATS[it.category || it.cat] ? (it.category || it.cat) : 'dom', emoji: it.emoji || null, note: it.note || null,
       q: it.question || null, opts: (it.options || []).slice(0, 3), done: false, deleted: false, createdAt: Date.now() };
     newIds.add(item.id); lit.set(item.id, Date.now()); put('items', item, true); added.push(item); }
   const gone = []; for (const r of removes) { const ex = open.find(o => !o.deleted && !gone.includes(o.name) && (norm(o.name).includes(norm(r)) || norm(r).includes(norm(o.name)))); if (ex) { put('items', { ...ex, deleted: true }, true); gone.push(ex.name); } }
-  added.removed = gone;
+  added.removed = gone; added.dupes = dupes;
   render(); promosSoon(); compareSoon(); setTimeout(() => newIds.clear(), 1200); setTimeout(() => { const t = Date.now(); lit.forEach((at, id) => t - at > 4400 && lit.delete(id)); }, 4500);
-  const first = added[0] && document.querySelector(`.row[data-id="${added[0].id}"]`); if (first) { const r = first.getBoundingClientRect(), dock = $('.dock')?.getBoundingClientRect().top ?? innerHeight; if (r.top < 70 || r.bottom > dock) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  const firstId = added[0] ? added[0].id : dupes.length ? (open.find(o => o.name === dupes[0]) || {}).id : null, first = firstId && document.querySelector(`.row[data-id="${firstId}"]`); if (first) { const r = first.getBoundingClientRect(), dock = $('.dock')?.getBoundingClientRect().top ?? innerHeight; if (r.top < 70 || r.bottom > dock) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   return added; }
 async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
   hear(text, 'think');
   try { const r = await api('/api/parse', { text }); const added = addItems(r.items || [], r.remove || []);
-    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); }
+    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); }
   catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (added.length) snack(added, text, 'Bez sieci, dodano'); } } }
 
 // ---------- the voice: hold the button and speak; let go and it goes on the list ----------
