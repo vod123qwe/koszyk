@@ -381,13 +381,15 @@ function rowEl(it) {
   const p = !it.done && bestOffer(it.name), q = qtyText(it);
   row.innerHTML = `<div class="del">Usuń</div><div class="line"><div class="c">
     <span class="em${emojiOf(it) ? '' : ' none'}" style="--tile:var(--t-${it.cat})">${emojiOf(it) ? esc(emojiOf(it)) : ''}</span>
-    <div class="txt"><div class="nm"><b>${esc(it.name)}</b>${q ? `<span class="qty">${esc(q)}</span>` : ''}<svg class="strike" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="${pencil(it.id)}"/></svg></div>
+    <div class="txt"><div class="nm" role="button" tabindex="0" aria-label="Edytuj: ${esc(it.name)}"><b>${esc(it.name)}</b>${q ? `<span class="qty">${esc(q)}</span>` : ''}<svg class="strike" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="${pencil(it.id)}"/></svg></div>
       ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p && (norm(p.title || p.name) !== norm(it.name) || promoKinds(p).some(k => k.k !== 'plain')) ? `<div class="dsub">${norm(p.title || p.name) === norm(it.name) ? '' : `<span class="dsub__name">${esc(p.title || p.name)}</span>`}${promoKinds(p).filter(k => k.k !== 'plain').map(k => `<span class="badge badge--${{ multi: 'warn', card: 'info' }[k.k]}">${esc(k.t)}</span>`).join('')}</div>` : ''}
       ${(() => { const n = subsHint(it).length; return n ? `<button type="button" class="subs" data-subs>${ic('swap', 2)}${n} ${plural(n, 'zamiennik', 'zamienniki', 'zamienników')} w promocji</button>` : ''; })()}
       ${!it.done && it.q ? `<div class="ask"><span>${esc(it.q)}</span>${(it.opts || []).map(o => `<button type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}</div>
     ${p ? `<button class="dprice" type="button" data-promo aria-label="Promocja: ${esc(p.title || p.name)}, ${zl(p.price)}">${pct(p) ? `<span class="badge badge--promo">${pct(p)}</span>` : ''}<b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</button>` : ''}
     <button class="chk" type="button" aria-pressed="${done}" aria-label="${done ? 'Przywróć' : 'Kupione'}: ${esc(it.name)}">${ic('check', 2.4)}</button></div></div>`;
   row.querySelector('.chk').onclick = () => tick(row, it);
+  row.querySelector('.txt').onclick = e => { if (!e.target.closest('button')) editSheet(it); };
+  row.querySelector('.nm').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editSheet(it); } };
   row.querySelectorAll('[data-opt]').forEach(b => b.onclick = () => { put('items', { ...it, name: b.dataset.opt, q: null, opts: [] }); promosSoon(); });
   const pb = row.querySelector('[data-promo]'); if (pb) pb.onclick = () => offersSheet(it);
   const sb = row.querySelector('[data-subs]'); if (sb) sb.onclick = () => subsSheet(it);
@@ -602,6 +604,32 @@ function wordsSheet() { const mine = Object.entries(myAliases()).sort((a, b) => 
     <p class="hint">Wbudowanych jest ${n} popularnych zapisów, np. łyski → whisky, keczup → ketchup, mocarella → mozzarella.</p>`, sh => {
     sh.querySelector('#wadd').onsubmit = e => { e.preventDefault(); const f = e.target; if (addAlias(f.a.value, f.b.value)) { vib(8); close(); setTimeout(wordsSheet, 380); } else f.a.focus(); };
     sh.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { dropAlias(b.dataset.w); b.closest('.wr').remove(); }); }); }
+// (editing a product: its name, how much and in what, and the aisle; the deal is looked up again for a new name)
+const EDIT_UNITS = ['szt', 'kg', 'g', 'l', 'ml', 'op'];
+function editSheet(it0) { const it = C.items[it0.id] || it0; let unit = it.unit || null, cat = it.cat || 'dom';
+  const units = [...EDIT_UNITS, ...(unit && !EDIT_UNITS.includes(unit) ? [unit] : [])], cats = [...new Set([...orderFor(store()), ...Object.keys(CATS)])].filter(c => CATS[c]);
+  const stepOf = () => unit === 'kg' || unit === 'l' ? .5 : unit === 'g' || unit === 'ml' ? 100 : 1;
+  const close = sheet(`<h3>Edytuj produkt</h3><form class="edf" id="edF" autocomplete="off">
+    <label class="edl" for="edN">Nazwa</label><input class="input" id="edN" name="n" value="${esc(it.name)}" autocapitalize="sentences" enterkeyhint="done">
+    <span class="edl" id="edQl">Ilość</span><div class="edq" role="group" aria-labelledby="edQl"><button class="ibtn ibtn--secondary ibtn--lg" type="button" data-d="-1" aria-label="Mniej">−</button>
+      <input class="input edn" id="edQ" name="q" inputmode="decimal" value="${it.qty == null ? '' : String(it.qty).replace('.', ',')}" placeholder="—" aria-label="Ilość">
+      <button class="ibtn ibtn--secondary ibtn--lg" type="button" data-d="1" aria-label="Więcej">${ic('plus', 2.2)}</button></div>
+    <div class="edch" role="radiogroup" aria-label="Jednostka">${units.map(u => `<button type="button" role="radio" class="chip chip--sm${u === unit ? ' chip--on' : ''}" aria-checked="${u === unit}" data-u="${esc(u)}">${esc(u)}</button>`).join('')}</div>
+    <span class="edl">Dział</span><div class="edch" role="radiogroup" aria-label="Dział">${cats.map(c => `<button type="button" role="radio" class="chip chip--sm${c === cat ? ' chip--on' : ''}" aria-checked="${c === cat}" data-c="${c}">${CAT_EMOJI[c] || ''} ${esc(CATS[c].name)}</button>`).join('')}</div>
+    <button class="btn btn--primary btn--lg btn--block" type="submit">Zapisz</button>
+    <button class="btn btn--ghost btn--lg btn--block eddel" type="button" data-del>${ic('trash')}Usuń z listy</button></form>`, sh => {
+    const f = sh.querySelector('#edF'), q = f.q, num = () => { const v = parseFloat(String(q.value).replace(',', '.')); return isFinite(v) && v > 0 ? v : null; };
+    const pick = (attr, set) => sh.querySelectorAll(`[data-${attr}]`).forEach(b => b.onclick = () => { const on = set(b.dataset[attr]);
+      sh.querySelectorAll(`[data-${attr}]`).forEach(x => { const me = x === b && on; x.classList.toggle('chip--on', me); x.setAttribute('aria-checked', String(me)); }); vib(5); });
+    // (a unit can be tapped off again: then it is just a count)
+    pick('u', u => { unit = unit === u ? null : u; return unit === u; }); pick('c', c => { cat = c; return true; });
+    sh.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const st = stepOf(), v = Math.round(((num() || 0) + st * +b.dataset.d) * 100) / 100; q.value = v > 0 ? String(v).replace('.', ',') : ''; vib(5); });
+    f.onsubmit = e => { e.preventDefault(); const cur = C.items[it.id] || it, name = f.n.value.trim().replace(/^./, c => c.toUpperCase()); if (!name) { f.n.focus(); return; }
+      const qty = num(), renamed = norm(name) !== norm(cur.name);
+      put('items', { ...cur, name, qty, unit: qty == null ? null : unit, cat, ...(renamed ? { emoji: null, q: null, opts: [] } : {}) }); vib(8); close();
+      if (renamed) { promosSoon(); compareSoon(); } };
+    sh.querySelector('[data-del]').onclick = () => { const cur = C.items[it.id] || it; put('items', { ...cur, deleted: true }); vib(10); close(); toast('Usunięto z listy'); };
+  }); }
 function menuSheet() { const t = theme();
   const close = sheet(`<h3>Koszyk</h3><div class="list">
     <button data-a="order">${ic('grip')}Kolejność działów w sklepie</button>

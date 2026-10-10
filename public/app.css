@@ -589,3 +589,14 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .cover .shp .ep.in .pl { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
 @media (hover: hover) { .cover .shp .ep:hover { background: var(--soft); } }
 .cover .shmore { margin-top: var(--s-5); }
+
+/* the product's edit sheet: a tap on the name opens it */
+.row .txt { cursor: pointer; } .row .nm:focus-visible { outline: 2px solid var(--aqua); outline-offset: 3px; border-radius: 6px; }
+.edf { display: flex; flex-direction: column; gap: var(--s-2); padding: 0 20px; }
+.edl { margin-top: var(--s-3); font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.edq { display: flex; align-items: center; gap: var(--s-2); }
+.edq .edn { flex: 1; text-align: center; font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.edq .ibtn { font-size: 22px; font-weight: 500; }
+.edch { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.edf .btn--primary { margin-top: var(--s-5); }
+.sheet .edf .btn.eddel { color: #d93b40; gap: var(--s-2); } .edf .eddel svg { width: 18px; height: 18px; }
