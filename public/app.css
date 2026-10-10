@@ -527,3 +527,5 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .frq__plus svg { width: 14px; height: 14px; }
 :root.dark .frq__plus { background: rgba(255,255,255,.08); }
 .pin h1 { margin-top: 0; }
+/* the count in the heading: our green behind, a bright pastel green on it */
+.hero mark { background: var(--markBg); color: var(--markInk); }

@@ -12,7 +12,7 @@
   button { font: inherit; border: 0; background: none; cursor: pointer; padding: 0; color: inherit; } svg { display: block; }
   .wrap { max-width: 920px; margin: 0 auto; padding: var(--s-8) var(--gutter) 120px; }
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-8); }
-  h1 { margin: 0; font-size: var(--fs-hero); letter-spacing: -.045em; line-height: 1.02; } h1 mark { background: var(--aqua); color: #0b2b2a; border-radius: var(--r-sm); padding: 0 .16em; }
+  h1 { margin: 0; font-size: var(--fs-hero); letter-spacing: -.045em; line-height: 1.02; } h1 mark { background: var(--markBg); color: var(--markInk); border-radius: var(--r-sm); padding: 0 .16em; }
   header p { margin: var(--s-3) 0 0; max-width: 520px; color: var(--muted); line-height: 1.5; }
   section { padding: var(--s-7) 0; border-top: 1px solid var(--line); }
   h2 { margin: 0 0 4px; font-size: var(--fs-xl); letter-spacing: -.02em; } .lead { margin: 0 0 var(--s-5); color: var(--muted); font-size: var(--fs-sm); }
@@ -65,7 +65,7 @@
 </div>
 <script>
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const COLORS = [['--bg', 'tło'], ['--soft', 'tło 2'], ['--line', 'linia'], ['--ink', 'tekst'], ['--muted', 'tekst 2'], ['--cta', 'akcja główna'], ['--promo', 'promocja'], ['--aqua', 'podświetlenie'], ['--mint', 'pozytywne tło'], ['--danger', 'nieodwracalne'], ['--warnBg', 'kilka sztuk'], ['--infoBg', 'karta / aplikacja'], ['--specialBg', 'limit']];
+  const COLORS = [['--bg', 'tło'], ['--soft', 'tło 2'], ['--line', 'linia'], ['--ink', 'tekst'], ['--muted', 'tekst 2'], ['--cta', 'akcja główna'], ['--promo', 'promocja'], ['--aqua', 'podświetlenie'], ['--markBg', 'tło wyróżnienia'], ['--markInk', 'tekst wyróżnienia'], ['--mint', 'pozytywne tło'], ['--danger', 'nieodwracalne'], ['--warnBg', 'kilka sztuk'], ['--infoBg', 'karta / aplikacja'], ['--specialBg', 'limit']];
   const paint = () => {
     document.getElementById('colors').innerHTML = COLORS.map(([v, n]) => `<div class="sw"><i style="background:var(${v})"></i><b>${n}</b><small>${v} · ${css(v)}</small></div>`).join('');
     document.getElementById('radii').innerHTML = ['xs', 'sm', 'md', 'lg', 'xl', 'full'].map(r => `<div class="rad"><i style="border-radius:var(--r-${r})"></i><small>--r-${r}</small></div>`).join('');
