@@ -443,7 +443,6 @@ svg { display: block; }
 .subs { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 10px 4px 8px; border-radius: var(--r-full); background: var(--soft); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--cta); }
 .subs svg { width: 14px; height: 14px; } :root.dark .subs { color: var(--cta); }
 .row.on .subs { display: none; }
-.sbcur { display: flex; align-items: flex-start; gap: var(--s-3); margin: 0 var(--s-5) var(--s-4); padding: var(--s-4); border-radius: var(--r-md); background: var(--soft); }
 .sbcur .em, .sbr .em { width: 44px; height: 44px; border-radius: var(--r-md); font-size: 22px; flex: none; }
 .sbn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .sbn small { font-size: var(--fs-xs); color: var(--muted); } .sbn b { font-size: var(--fs-lg); font-weight: var(--fw-semibold); } .sbn .qty { font-size: var(--fs-sm); color: var(--muted); font-weight: var(--fw-medium); }
 .sbl { border-top: 1px solid var(--line); }
@@ -488,3 +487,10 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .dl .dlw { margin: var(--s-4) 0 0 64px; }
 .ep .dp { gap: 3px; }
 .dl .offer .terms, .offer .terms { margin: 0; justify-content: flex-start; }
+/* the deal under a product, laid out like an Offer: the exact name on top, then one line: discount, price, old price, terms */
+.deal { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; grid-template-columns: none; grid-template-areas: none; width: 100%; padding: 10px 12px; text-align: left; }
+.deal__name { font-size: var(--fs-sm); font-weight: var(--fw-semibold); line-height: 1.35; color: var(--ink); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.deal__line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.deal__line b { font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } :root.dark .deal__line b { color: #8fe0b8; }
+.deal__line s { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
+.row.on .deal { opacity: .45; }
