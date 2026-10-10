@@ -235,8 +235,8 @@ async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
   hear(text, 'think');
   try { const r = await api('/api/parse', { text }); const added = addItems(r.items || [], r.remove || []);
-    hear(null); if (adderOpen) return added; const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); return added; }
-  catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (!adderOpen && added.length) snack(added, text, 'Bez sieci, dodano'); return added; } } }
+    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); return added; }
+  catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (added.length) snack(added, text, 'Bez sieci, dodano'); return added; } } }
 
 // ---------- the voice: hold the button and speak; let go and it goes on the list ----------
 // (the browser may end recognition by itself, after a pause or a hiccup: while the button is held it starts again;
@@ -279,16 +279,16 @@ function pinPage(on) { const b = document.body;
   else { b.style.position = b.style.top = b.style.left = b.style.right = ''; scrollTo(0, adderY); } }
 function inertRest(on) { document.querySelectorAll('#app > *').forEach(n => { if (!n.classList.contains('adder') && !n.classList.contains('toast') && !n.classList.contains('snack')) n.inert = on; }); }
 function openAdder(prefill = '') { const el = adderEl(), q = $('#adQ'); if (!el) return;
-  adderOpen = true; el.hidden = false; pinPage(true); inertRest(true); requestAnimationFrame(() => el.classList.add('show'));
+  adderOpen = true; document.documentElement.classList.add('adding'); el.hidden = false; pinPage(true); inertRest(true); requestAnimationFrame(() => el.classList.add('show'));
   q.value = prefill; q.focus(); if (prefill) q.setSelectionRange(prefill.length, prefill.length);
   // (the keyboard slides in over ~half a second: follow it frame by frame for a moment)
   const t0 = performance.now(); cancelAnimationFrame(fitT); const follow = () => { fitAdder(); if (performance.now() - t0 < 900) fitT = requestAnimationFrame(follow); }; follow();
   adderRender(); }
-function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; inertRest(false); pinPage(false); if (focusRow) { focusRow.until = Date.now() + 2500; setTimeout(() => showFocus(true), 380); } editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
+function closeAdder() { const el = adderEl(); if (!el || !adderOpen) return; adderOpen = false; document.documentElement.classList.remove('adding'); inertRest(false); pinPage(false); if (focusRow) { focusRow.until = Date.now() + 2500; setTimeout(() => showFocus(true), 380); } editFrom = null; $('#adQ').blur(); el.classList.remove('show'); setTimeout(() => { if (!adderOpen) el.hidden = true; }, 380); }
 // (iOS keeps the layout height when the keyboard is up: follow the visible part of the screen instead)
-function fitAdder() { const vv = window.visualViewport, el = adderEl(); if (!el) return; el.style.setProperty('--vvh', (vv ? vv.height : innerHeight) + 'px'); el.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px'); }
+function fitAdder() { const vv = window.visualViewport, el = adderEl(); if (!el) return; el.style.setProperty('--vvh', (vv ? vv.height : innerHeight) + 'px'); el.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px');
+  const bar = el.querySelector('.ad-bar'); document.documentElement.style.setProperty('--adB', Math.max(0, innerHeight - (vv ? vv.offsetTop + vv.height : innerHeight)) + (bar ? bar.offsetHeight : 64) + 'px'); }
 if (window.visualViewport) { visualViewport.addEventListener('resize', () => adderOpen && fitAdder()); visualViewport.addEventListener('scroll', () => adderOpen && fitAdder()); }
-function adderSay(t) { const m = $('.ad-msg'); if (!m) return; m.textContent = t; m.classList.add('show'); clearTimeout(adderMsgT); adderMsgT = setTimeout(() => m.classList.remove('show'), 2600); }
 const hl = (name, q) => { if (!q) return esc(name); const i = norm(name).indexOf(q); return i < 0 ? esc(name) : esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + q.length)) + '</mark>' + esc(name.slice(i + q.length)); };
 function adderRender() { const box = $('#adList'); if (!box) return; const raw = $('#adQ').value.trim(), q = norm(raw), onList = new Set(openItems().map(i => norm(i.name)));
   const hist = Object.values(C.history).filter(looksLikeProduct), common = (CAT.common || []).map(([name, cat]) => ({ name, cat }));
@@ -309,15 +309,14 @@ function adderRender() { const box = $('#adList'); if (!box) return; const raw =
     html = (exact ? '' : `<button class="adr raw" type="button" data-raw="1"><span class="em">${ic('plus', 2.2)}</span><span class="adn">Dodaj „${esc(raw)}”<small>${/\d/.test(raw) || raw.split(/\s+/).length > 2 ? 'rozdzielę produkty i ilości' : 'tak, jak wpisałeś'}</small></span></button>`)
       + pick.slice(0, 14).map(x => row(x, x.from === 'mine' ? 'z Twoich zakupów' : x.from === 'offer' ? `w promocji w ${IN[store()]}` : '')).join(''); }
   box.innerHTML = html; box.scrollTop = q ? box.scrollHeight : 0;
-  box.querySelectorAll('[data-name]').forEach(b => b.onclick = () => { if (b.classList.contains('on')) { adderSay(`${b.dataset.name} już jest na liście`); return; }
-    const added = addItems([{ name: b.dataset.name, category: b.dataset.cat || undefined }]); vib(8); if (added.length) adderSay(`Dodano: ${b.dataset.name}`);
+  box.querySelectorAll('[data-name]').forEach(b => b.onclick = () => { if (b.classList.contains('on')) { toast(`${b.dataset.name} już jest na liście`); return; }
+    const added = addItems([{ name: b.dataset.name, category: b.dataset.cat || undefined }]); vib(8); if (added.length) snack(added, b.dataset.name);
     $('#adQ').value = ''; adderRender(); });
   const r = box.querySelector('[data-raw]'); if (r) r.onclick = () => submitText(raw); }
 // (typed text goes through the same parser as the voice; the sheet stays open for the next one)
 async function submitText(t) { t = t.trim(); if (!t) return; const learned = editFrom ? learnFromEdit(editFrom, t) : []; editFrom = null;
   $('#adQ').value = ''; adderRender();
   const added = await addText(t);
-  if (adderOpen && added) adderSay(added.length ? `Dodano: ${added.map(i => i.name + (qtyText(i) ? ' ' + qtyText(i) : '')).join(', ')}` : (added.dupes || []).length ? `Już jest na liście: ${added.dupes.join(', ')}` : 'Nic nowego');
   if (learned.length) setTimeout(() => toast(`Zapamiętam: ${learned.map(([a, b]) => `„${a}” to ${b}`).join(', ')}`), adderOpen ? 2800 : 5300);
   if (adderOpen) adderRender(); }
 // (the snackbar after adding: what landed on the list, and a way back: "Zmień" puts the words in the field, the bin takes them off)
@@ -325,9 +324,9 @@ let snackT = 0, editFrom = null;
 function snack(added, text, lead = 'Dodano', gone = []) { const el = $('.snack'); if (!el) return; $('.toast')?.classList.remove('show');
   el.querySelector('.st').innerHTML = `<b>${lead}:</b> ${added.map(i => esc(i.name + (i.qty == null ? '' : i.unit ? ' ' + qtyText(i) : ' ×' + qtyText(i)))).join(', ')}${gone.length ? ` · <b>Usunięto:</b> ${gone.map(esc).join(', ')}` : ''}`;
   const hide = () => { el.classList.remove('show'); clearTimeout(snackT); };
-  const drop = () => { added.forEach(a => { const cur = C.items[a.id]; if (cur && !cur.deleted) put('items', { ...cur, deleted: true }, true); lit.delete(a.id); }); render(); compareSoon(); hide(); };
+  const drop = () => { added.forEach(a => { const cur = C.items[a.id]; if (cur && !cur.deleted) put('items', { ...cur, deleted: true }, true); lit.delete(a.id); }); render(); compareSoon(); hide(); if (adderOpen) adderRender(); };
   el.querySelector('[data-s=edit]').textContent = 'Zmień'; el.querySelector('[data-s=del]').hidden = false;
-  el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; openAdder(text); };
+  el.querySelector('[data-s=edit]').onclick = () => { drop(); editFrom = text; if (!adderOpen) return openAdder(text); const q = $('#adQ'); q.value = text; q.focus(); q.setSelectionRange(text.length, text.length); adderRender(); };
   const del = el.querySelector('[data-s=del]'); del.setAttribute('aria-label', added.length === 1 ? `Usuń: ${added[0].name}` : 'Usuń dodane');
   del.onclick = () => { drop(); vib(10); toast(added.length === 1 ? 'Usunięto z listy' : `Usunięto ${added.length}`); };
   const run = ms => { clearTimeout(snackT); snackT = setTimeout(hide, ms); };

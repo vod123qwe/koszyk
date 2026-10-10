@@ -569,3 +569,6 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 @media (hover: hover) { .dprice:hover { background: var(--soft); } }
 .row.on .dprice, .row.on .dsub { opacity: .45; }
 .row:has(.dprice) .line .c { padding-top: 16px; padding-bottom: 16px; }
+
+/* while the add sheet is open the snackbar and the toast rise just above its input bar (and above the keyboard) */
+:root.adding .snack, :root.adding .toast { bottom: calc(var(--adB, 72px) + 12px); }
