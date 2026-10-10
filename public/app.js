@@ -39,6 +39,7 @@ const I = {
   back: '<path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
   paper: '<path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2M8.5 8h4.5M8.5 11.5h4.5M8.5 15h3"/>',
+  swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] || I.box}</svg>`;
@@ -135,6 +136,23 @@ const perUnit = o => o.unit ? ` / ${o.unit}` : '';
 // (each product on the list remembers the cut it had in this shop; nothing is removed unless you tap the cross)
 let promoChecked = false;
 const realDeal = name => (PR[name] || []).find(o => o.oldPrice && o.oldPrice > o.price);
+function subsFor(it, sid = store()) { const head = norm(it.name).split(' ')[0]; if (!head || head.length < 3) return [];
+  const own = realDeal(it.name), ownKey = own ? norm(own.title || own.name) : '', mine = norm(it.name);
+  return (EP[sid] || []).filter(o => o.oldPrice && o.oldPrice > o.price && offerFits(o.name, head) && (!it.cat || it.cat === 'dom' || !o.cat || o.cat === it.cat)
+    && norm(o.title || o.name) !== ownKey && norm(o.title || o.name) !== mine).sort((a, b) => offPct(b) - offPct(a)).slice(0, 12); }
+// (worth pointing at when you named a particular product, or when yours is not on offer)
+const subsHint = it => { if (it.done) return []; const subs = subsFor(it); return subs.length && (!realDeal(it.name) || it.name.trim().split(/\s+/).length > 1) ? subs : []; };
+function subsSheet(it) { const own = realDeal(it.name), subs = subsFor(it), sid = store(), sh0 = storeOf(sid);
+  const close = sheet(`<h3>Zamienniki w promocji</h3><p class="sub">Ten sam rodzaj produktu, taniej w ${esc(IN[sid] || sh0.name)}. Zamień, a ilość na liście zostanie.</p>
+    <div class="sbcur"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="sbn"><small>Na Twojej liście</small><b>${esc(it.name)}${qtyText(it) ? ` <span class="qty">${esc(qtyText(it))}</span>` : ''}</b>
+      ${own ? `<span class="badges">${pct(own) ? `<span class="badge badge--promo">${pct(own)}</span>` : ''}${kindBadges(own)}</span><small>${esc(own.title || own.name)} · ${zl(own.price)}</small>` : '<small>bez promocji w tym sklepie</small>'}</span></div>
+    <div class="sbl">${subs.map((o, i) => `<div class="sbr"><span class="em" style="--tile:var(--t-${o.cat || 'dom'})">${esc(o.emoji || emojiGuess(o.name) || '•')}</span>
+      <span class="sbo"><b>${esc(o.title || o.name)}</b>${termsHtml(o)}</span>
+      <span class="sbp"><span class="badges r">${pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}${kindBadges(o, 1)}</span><b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span>
+      <button type="button" class="btn btn--secondary btn--sm" data-swap="${i}">Zamień</button></div>`).join('')}</div>`, sh => {
+    sh.querySelectorAll('[data-swap]').forEach(b => b.onclick = () => { const o = subs[+b.dataset.swap], cur = C.items[it.id]; if (!o || !cur) return;
+      const name = o.title || o.name; put('items', { ...cur, name, cat: o.cat || cur.cat, emoji: o.emoji || null, promo: null, q: null, opts: [] });
+      focusRow = { id: it.id, until: Date.now() + 2500 }; lit.set(it.id, Date.now()); vib(10); close(); promosSoon(); compareSoon(); toast(`Zamieniono na: ${name}`); }); }); }
 const promoSnap = (o, sid) => o ? { store: sid, name: o.name, price: o.price, oldPrice: o.oldPrice, until: o.until } : null;
 function snapshotPromos() { const sid = store();
   for (const it of openItems()) { const now = promoSnap(realDeal(it.name), sid), was = it.promo && it.promo.store === sid ? it.promo : it.promo === null ? null : undefined;
@@ -328,11 +346,13 @@ function rowEl(it) {
     <span class="em${emojiOf(it) ? '' : ' none'}" style="--tile:var(--t-${it.cat})">${emojiOf(it) ? esc(emojiOf(it)) : ''}</span>
     <div class="txt"><div class="nm"><b>${esc(it.name)}</b>${q ? `<span class="qty">${esc(q)}</span>` : ''}<svg class="strike" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="${pencil(it.id)}"/></svg></div>
       ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p ? `<button class="deal" type="button" data-promo aria-label="Promocja: ${esc(p.name)}">${pct(p) ? `<span class="badge badge--promo">${pct(p)}</span>` : ''}<span class="dn"><span class="dnn">${esc(p.title || p.name)}</span>${promoKinds(p).some(k => k.k !== 'plain') ? `<span class="badges">${kindBadges(p)}</span>` : ''}</span><span class="dp"><b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</span></button>` : ''}
+      ${(() => { const n = subsHint(it).length; return n ? `<button type="button" class="subs" data-subs>${ic('swap', 2)}${n} ${plural(n, 'zamiennik', 'zamienniki', 'zamienników')} w promocji</button>` : ''; })()}
       ${!it.done && it.q ? `<div class="ask"><span>${esc(it.q)}</span>${(it.opts || []).map(o => `<button type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}</div>
     <button class="chk" type="button" aria-pressed="${done}" aria-label="${done ? 'Przywróć' : 'Kupione'}: ${esc(it.name)}">${ic('check', 2.4)}</button></div></div>`;
   row.querySelector('.chk').onclick = () => tick(row, it);
   row.querySelectorAll('[data-opt]').forEach(b => b.onclick = () => { put('items', { ...it, name: b.dataset.opt, q: null, opts: [] }); promosSoon(); });
   const pb = row.querySelector('[data-promo]'); if (pb) pb.onclick = () => offersSheet(it);
+  const sb = row.querySelector('[data-subs]'); if (sb) sb.onclick = () => subsSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
 // ---------- keeping the page still: a rebuilt list keeps its height and scroll; the row you just added stays in view ----------

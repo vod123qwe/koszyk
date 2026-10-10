@@ -439,3 +439,16 @@ svg { display: block; }
 .deal .dn .badges { grid-area: kinds; margin: 0; }
 .deal .dp { grid-area: price; justify-self: end; margin: 0; }
 .deal .dp, .deal .dp b, .deal .dp s { white-space: nowrap; } .deal .dn .badges { min-width: 0; }
+
+/* substitutes: a quiet link under the product, and the sheet */
+.subs { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 10px 4px 8px; border-radius: var(--r-full); background: var(--soft); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--cta); }
+.subs svg { width: 14px; height: 14px; } :root.dark .subs { color: var(--cta); }
+.row.on .subs { display: none; }
+.sbcur { display: flex; align-items: flex-start; gap: var(--s-3); margin: 0 var(--s-5) var(--s-4); padding: var(--s-4); border-radius: var(--r-md); background: var(--soft); }
+.sbcur .em, .sbr .em { width: 44px; height: 44px; border-radius: var(--r-md); font-size: 22px; flex: none; }
+.sbn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; } .sbn small { font-size: var(--fs-xs); color: var(--muted); } .sbn b { font-size: var(--fs-lg); font-weight: var(--fw-semibold); } .sbn .qty { font-size: var(--fs-sm); color: var(--muted); font-weight: var(--fw-medium); }
+.sbl { border-top: 1px solid var(--line); }
+.sbr { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "em name price" "em name btn"; column-gap: var(--s-3); row-gap: var(--s-2); align-items: center; padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--line); }
+.sbr .em { grid-area: em; align-self: start; } .sbr .sbo { grid-area: name; min-width: 0; display: flex; flex-direction: column; } .sbr .sbo b { font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.sbr .sbp { grid-area: price; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; } .sbr .sbp b { font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } .sbr .sbp s { font-size: var(--fs-xs); color: var(--muted); }
+.sbr .btn { grid-area: btn; justify-self: end; }
