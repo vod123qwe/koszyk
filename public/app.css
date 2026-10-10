@@ -321,3 +321,39 @@ svg { display: block; }
 .cmp .hi { font-weight: 650; } .cmp .ho { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .cmp .hp { display: flex; align-items: baseline; gap: 6px; } .cmp .hp .pill { font-size: 11px; } .cmp .hp b { font-weight: 650; color: var(--cta); } .cmp .hp s { font-size: 12px; color: var(--muted); }
 :root.dark .cmp .hp b { color: #8fe0b8; }
+
+/* a quiet header: no box, a line only once you scroll */
+.top { border-bottom-color: transparent; transition: border-color .25s; } .top.lined { border-bottom-color: var(--line); }
+.tag i { display: none; } .tag { gap: 10px; }
+.top .c { gap: 10px; }
+/* your shops: scroll when many, "+" to manage, "najtaniej" under the cheapest */
+.stores .c { display: flex; align-items: stretch; }
+.stbs { flex: 1; min-width: 0; display: flex; overflow-x: auto; scrollbar-width: none; } .stbs::-webkit-scrollbar { display: none; }
+.stb { flex: 1 0 auto; min-width: 104px; flex-direction: column; gap: 3px; padding: 0 14px; }
+.stb .sn { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.stb .cheap { padding: 1px 7px; border-radius: 999px; background: var(--promo); color: var(--promoInk); font-size: 10px; font-weight: 700; letter-spacing: .02em; animation: rise .35s var(--ease) both; }
+.addSt { width: 52px; flex: none; display: grid; place-items: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--muted); } .addSt svg { width: 18px; height: 18px; }
+.ordBtn { flex: none; }
+.slist { border-top: 1px solid var(--line); }
+.srow { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 0 20px; border-bottom: 1px solid var(--line); font-size: 16px; cursor: pointer; }
+.srow > i { width: 10px; height: 10px; border-radius: 50%; background: var(--sc); flex: none; } .srow span { flex: 1; }
+.srow input { position: absolute; opacity: 0; pointer-events: none; }
+.srow .sw { position: relative; width: 44px; height: 26px; border-radius: 999px; background: var(--line); transition: background .25s; flex: none; }
+.srow .sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .3s var(--ease); }
+.srow input:checked + .sw { background: var(--cta); } .srow input:checked + .sw::after { transform: translateX(18px); }
+.srow input:focus-visible + .sw { outline: 2px solid var(--aqua); outline-offset: 2px; }
+/* "Gdzie dziś taniej": more air outside and in */
+.cmp { margin: 64px 16px 48px; }
+.cmp .h .c { height: auto; padding-top: 22px; padding-bottom: 14px; }
+.cmp .lead .c { padding-top: 20px; padding-bottom: 22px; font-size: 18px; line-height: 1.45; }
+.cmp .cell { padding: 18px 12px 20px 20px; } .cmp .cell b { margin-top: 10px; } .cmp .cell small { margin-top: 6px; }
+.cmp .hits { padding: 10px 0 8px; } .cmp .hs { padding: 14px 20px 8px; } .cmp .hn { margin-bottom: 10px; } .cmp .hr { padding: 10px 0; }
+.cmp .note { padding: 8px 20px 24px; line-height: 1.5; }
+.shp { margin-top: 0; }
+.stb { min-width: 0; padding: 0 12px; } .addSt, .ordBtn { width: 44px; }
+.stbs.more { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.cmp .hmore { margin: 4px 20px 0; border-top: 1px solid color-mix(in srgb, var(--ink) 8%, var(--soft)); }
+.cmp .hmore summary { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 14px; font-weight: 600; color: var(--cta); cursor: pointer; list-style: none; }
+.cmp .hmore summary::-webkit-details-marker { display: none; } .cmp .hmore summary::after { content: '+'; font-size: 18px; font-weight: 500; } .cmp .hmore[open] summary::after { content: '−'; }
+.cmp .hmore .hs { padding-left: 0; padding-right: 0; }
+:root.dark .cmp .hmore summary { color: #8fe0b8; }

@@ -72,7 +72,11 @@ setInterval(() => { if (document.visibilityState === 'visible') sync(); }, 4000)
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
 
 // ---------- the store and the order of its aisles (learned from the order you tick things off in it) ----------
-const store = () => (C.settings.store && C.settings.store.value) || 'lidl';
+// ---------- your shops: picked from every chain with a leaflet, shared by the family; the first is where you are by default ----------
+const DEFAULT_STORES = ['lidl', 'biedronka', 'kaufland'];
+const myIds = () => { const v = C.settings.myStores && C.settings.myStores.value, ok = Array.isArray(v) ? v.filter(id => CAT.stores.some(s => s.id === id)) : []; return ok.length ? ok : DEFAULT_STORES; };
+const MY = () => myIds().map(id => CAT.stores.find(s => s.id === id));
+const store = () => { const v = C.settings.store && C.settings.store.value, ids = myIds(); return ids.includes(v) ? v : ids[0]; };
 // ---------- words dictation hears wrong: "łyski" means whisky; built-in ones from the catalog, the family's own in settings ----------
 const myAliases = () => (C.settings.aliases && C.settings.aliases.value) || {};
 let aliasRe = null, aliasKey = '';
@@ -118,12 +122,12 @@ function promosSoon() { clearTimeout(prT); prT = setTimeout(async () => {
 const bestOffer = name => (PR[name] || [])[0];
 let CMP = {}, cmpKey = '', cmpT = 0;
 function compareSoon() { clearTimeout(cmpT); cmpT = setTimeout(async () => {
-  const names = [...new Set(openItems().map(i => i.name))], key = names.join('|'); if (key === cmpKey) return; cmpKey = key;
+  const names = [...new Set(openItems().map(i => i.name))], key = names.join('|') + '@' + myIds().join(','); if (key === cmpKey) return; cmpKey = key;
   if (!names.length) { CMP = {}; render(); return; }
-  const out = {}; await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/promos', { store: s.id, names }); let save = 0, n = 0;
+  const out = {}; await Promise.all(MY().map(async s => { try { const r = await api('/api/promos', { store: s.id, names }); let save = 0, n = 0;
     const hits = []; for (const nm of names) { const o = ((r.promos || {})[nm] || []).find(x => x.oldPrice && x.oldPrice > x.price); if (o) { hits.push({ item: nm, o }); save += o.oldPrice - o.price; n++; } }
     out[s.id] = { save, n, hits }; } catch { } }));
-  CMP = out; render(); }, 1400); }
+  CMP = out; storesKey = ''; render(); }, 1400); }
 
 // ---------- suggestions: what is due again (from the rhythm you buy it in), what is on offer, what you buy most ----------
 function suggestions() {
@@ -236,7 +240,7 @@ function swipe(row, it) {
 const qtyText = it => it.qty == null ? '' : `${String(it.qty).replace('.', ',')}${it.unit ? ' ' + it.unit : ''}`;
 const plural = (n, one, few, many) => n === 1 ? one : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? few : many;
 const pct = p => p.oldPrice ? `−${Math.round((1 - p.price / p.oldPrice) * 100)}%` : '';
-const IN = { lidl: 'Lidlu', biedronka: 'Biedronce', kaufland: 'Kauflandzie' }, THRU = { lidl: 'Lidla', biedronka: 'Biedronkę', kaufland: 'Kauflanda' };
+const IN = Object.fromEntries(CAT.stores.map(x => [x.id, x.in || x.name])), THRU = Object.fromEntries(CAT.stores.map(x => [x.id, x.thru || x.name]));
 function rowEl(it) {
   const done = it.done || ticking.has(it.id), row = document.createElement('div');
   row.className = 'row' + (done ? ' on' : '') + (newIds.has(it.id) ? ' new' : '') + (lit.has(it.id) && !done ? ' lit' : ''); row.dataset.id = it.id;
@@ -265,12 +269,14 @@ function renderList() {
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
   // ("Gdzie dziś taniej": only for what is still to buy, only real cuts, and only when there is at least one)
-  const cs = CAT.stores.filter(x => CMP[x.id]), best = cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0], total = open.length;
+  const cs = MY().filter(x => CMP[x.id]), best = cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0], total = open.length;
   if (total && best) { const B = CMP[best.id];
     wrap.insertAdjacentHTML('beforeend', `<section class="cmp"><div class="h"><div class="c">Gdzie dziś taniej</div></div>
       <div class="lead"><div class="c">W <mark>${IN[best.id]}</mark> ${B.n === 1 ? 'jeden produkt' : B.n + ' ' + plural(B.n, 'produkt', 'produkty', 'produktów')} z Twojej listy ${plural(B.n, 'jest', 'są', 'jest')} w promocji, zaoszczędzisz około ${zl(B.save)}.</div></div>
       <div class="grid">${cs.map(x => `<div class="cell${x.id === best.id ? ' best' : ''}${CMP[x.id].n ? '' : ' none'}" style="--sc:${x.color}"><span class="s"><i></i>${x.name}</span><b>${CMP[x.id].n ? '−' + zl(CMP[x.id].save) : '—'}</b><small>${CMP[x.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')}</small></div>`).join('')}</div>
-      <div class="hits">${cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save).map(x => `<div class="hs" style="--sc:${x.color}"><div class="hn"><i></i>${x.name}</div>${CMP[x.id].hits.map(({ item, o }) => `<div class="hr"><span class="hi">${esc(item)}</span><span class="ho">${esc(o.name)}</span><span class="hp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b><s>${zl(o.oldPrice)}</s></span></div>`).join('')}</div>`).join('')}</div>
+      ${(() => { const ss = cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), one = x => `<div class="hs" style="--sc:${x.color}"><div class="hn"><i></i>${x.name}</div>${CMP[x.id].hits.map(({ item, o }) => `<div class="hr"><span class="hi">${esc(item)}</span><span class="ho">${esc(o.name)}</span><span class="hp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b><s>${zl(o.oldPrice)}</s></span></div>`).join('')}</div>`;
+        // (the cheapest shop in full; the others behind one tap)
+        return `<div class="hits">${one(ss[0])}${ss.length > 1 ? `<details class="hmore"><summary>Pokaż pozostałe sklepy (${ss.length - 1})</summary>${ss.slice(1).map(one).join('')}</details>` : ''}</div>`; })()}
       <p class="note">Liczymy tylko to, co jeszcze do kupienia, i tylko obniżki z gazetek. Pełnego kosztu zakupów nie podajemy, bo sklepy nie publikują zwykłych cen.</p></section>`); }
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
@@ -296,8 +302,8 @@ function rankLeaf(list) { const my = mine().slice(0, 30).map(h => h.name);
 function picksForEmpty() { const hs = mine().slice(0, 10).map(h => ({ name: h.name, cat: h.cat, emoji: h.emoji }));
   for (const [name, cat] of STAPLES) { if (hs.length >= 12) break; if (!hs.some(h => norm(h.name) === norm(name))) hs.push({ name, cat }); }
   return hs; }
-async function loadShopPromos() { if (epBusy || Date.now() - epAt < 30 * 60e3) return; epBusy = true;
-  await Promise.all(CAT.stores.map(async s => { try { const r = await api('/api/leaflet', { store: s.id }), best = {};
+async function loadShopPromos() { const need = MY().filter(x => EP[x.id] === undefined); if (epBusy || (!need.length && Date.now() - epAt < 30 * 60e3)) return; epBusy = true;
+  await Promise.all((need.length && Date.now() - epAt < 30 * 60e3 ? need : MY()).map(async s => { try { const r = await api('/api/leaflet', { store: s.id }), best = {};
     // (one row per product name: the deeper cut wins)
     for (const o of r.items || []) { const k = norm(o.name); if (!best[k] || offPct(o) > offPct(best[k]) || (offPct(o) === offPct(best[k]) && o.price < best[k].price)) best[k] = o; }
     EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
@@ -317,12 +323,12 @@ function leafletsSheet() { loadShopPromos();
   const row = st => { const l = EP[st.id], best = l && l.length ? Math.max(...l.map(o => Math.round(offPct(o) * 100))) : 0;
     return `<button class="lrow" type="button" data-open="${st.id}" style="--sc:${st.color}" ${l && l.length ? '' : 'disabled'}><i></i><span class="ln"><b>${esc(st.name)}</b><small>${l === undefined ? 'Wczytuję…' : !l ? 'Nie udało się pobrać' : !l.length ? 'Brak promocji spożywczych' : `${l.length} ${plural(l.length, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`}</small></span>${best ? `<span class="pill">do −${best}%</span>` : ''}${ic('chev', 2)}</button>`; };
   const close = sheet(`<h3>Gazetki</h3><p class="sub">Promocje spożywcze i drogeryjne z gazetek sieci w tym tygodniu. Wybierz sklep, żeby przejrzeć całą listę po działach.</p>
-    <div class="lrows">${CAT.stores.map(row).join('')}</div>`, sh => sh.querySelectorAll('[data-open]').forEach(b => b.onclick = () => leafletSheet(b.dataset.open)));
-  if (CAT.stores.some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
+    <div class="lrows">${MY().map(row).join('')}</div>`, sh => sh.querySelectorAll('[data-open]').forEach(b => b.onclick = () => leafletSheet(b.dataset.open)));
+  if (MY().some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
 function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
   for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
   const cats = order.filter(c => by[c]);
-  sheet(`<div class="ltabs" role="tablist">${CAT.stores.map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
+  sheet(`<div class="ltabs" role="tablist">${MY().map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
     <h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} ${leafDates(l)}. Dotknij, żeby dopisać do listy.</p>
     <div class="lcats">${cats.map(c => `<button type="button" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
     <label class="lsearch">${ic('search', 2)}<input type="search" placeholder="Szukaj w gazetce…" autocomplete="off" aria-label="Szukaj w gazetce"></label>
@@ -343,7 +349,7 @@ function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShop
     <p class="note">Najpierw to, co zwykle kupujesz, potem największe obniżki. Dotknij, żeby dopisać do listy.</p></section>`);
   const sec = wrap.querySelector('.shp'); wireAdds(sec); wireAll(sec); }
 function renderEmpty(wrap) {
-  const picks = picksForEmpty(), cur = store(), stores = [CAT.stores.find(s => s.id === cur), ...CAT.stores.filter(s => s.id !== cur)].filter(Boolean);
+  const picks = picksForEmpty(), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];
     const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
@@ -405,6 +411,7 @@ function wordsSheet() { const mine = Object.entries(myAliases()).sort((a, b) => 
 function menuSheet() { const t = theme();
   const close = sheet(`<h3>Koszyk</h3><div class="list">
     <button data-a="order">${ic('grip')}Kolejność działów w sklepie</button>
+    <button data-a="shops">${ic('bag')}Moje sklepy</button>
     <button data-a="words">${ic('book')}Słownik dyktowania</button>
     <button data-a="clear">${ic('check')}Usuń kupione z listy</button>
     ${Object.values(C.items).some(i => !i.deleted) ? `<button data-a="wipe" class="dz">${ic('trash')}Wyczyść całą listę</button>` : ''}
@@ -412,6 +419,7 @@ function menuSheet() { const t = theme();
     <button data-a="out">${ic('out')}Wyloguj to urządzenie</button></div><p class="hint">${aiOn ? 'Dyktowanie rozumie AI (Claude).' : 'AI wyłączone: dyktowanie dzieli prosty parser. Ustaw ANTHROPIC_API_KEY na serwerze, żeby rozumiało lepiej.'} Promocje z ding.pl.</p>`, sh => {
     sh.querySelector('[data-a=order]').onclick = () => { close(); setTimeout(orderSheet, 380); };
     sh.querySelector('[data-a=words]').onclick = () => { close(); setTimeout(wordsSheet, 380); };
+    sh.querySelector('[data-a=shops]').onclick = () => { close(); setTimeout(storesSheet, 380); };
     const wp = sh.querySelector('[data-a=wipe]'); if (wp) wp.onclick = () => { close(); setTimeout(clearAllSheet, 380); };
     sh.querySelector('[data-a=clear]').onclick = () => { Object.values(C.items).filter(i => i.done && !i.deleted).forEach(i => put('items', { ...i, deleted: true }, true)); render(); close(); };
     sh.querySelector('[data-a=theme]').onclick = () => { const n = t === 'system' ? 'dark' : t === 'dark' ? 'light' : 'system'; localStorage.setItem('koszyk.theme', n); applyTheme(); close(); setTimeout(menuSheet, 380); };
@@ -450,6 +458,22 @@ function renderPin() {
   removeEventListener('keydown', window.__pinKey || (() => { })); window.__pinKey = onKey; addEventListener('keydown', onKey); }
 
 // ---------- the page ----------
+let storesKey = '';
+function renderStores() { const cur = store(), cs = MY().filter(x => CMP[x.id] && CMP[x.id].n), best = cs.sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0];
+  const key = myIds().join(',') + '|' + cur + '|' + (best ? best.id + CMP[best.id].save : ''); if (key === storesKey) return; storesKey = key;
+  const el = $('#stbs'); el.innerHTML = MY().map(x => `<button class="stb${x.id === cur ? ' on' : ''}" type="button" data-s="${x.id}" style="--sc:${x.color}"><span class="sn"><span class="d"></span>${esc(x.name)}</span>${best && best.id === x.id && CMP[x.id].save > 0 ? '<small class="cheap">najtaniej</small>' : ''}</button>`).join('');
+  el.querySelectorAll('.stb').forEach(b => b.onclick = () => { if (b.dataset.s === store()) return; put('settings', { id: 'store', value: b.dataset.s }); PR = {}; prKey = ''; promosSoon(); vib(6); });
+  const on = el.querySelector('.stb.on'); if (on && el.scrollWidth > el.clientWidth) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  const edge = () => el.classList.toggle('more', el.scrollLeft + el.clientWidth < el.scrollWidth - 4); el.onscroll = edge; edge(); }
+// (pick your shops; the family sees the same ones)
+function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(id)), ...CAT.stores.filter(x => !mine.includes(x.id))];
+  const close = sheet(`<h3>Moje sklepy</h3><p class="sub">Wybierz sieci, w których robisz zakupy. Ich gazetki trafią do promocji i porównania. Ustawienie jest wspólne dla całej rodziny.</p>
+    <div class="slist">${all.map(x => `<label class="srow" style="--sc:${x.color}"><i></i><span>${esc(x.name)}</span><input type="checkbox" data-id="${x.id}" ${mine.includes(x.id) ? 'checked' : ''}><b class="sw" aria-hidden="true"></b></label>`).join('')}</div>
+    <p class="hint">Gazetki pochodzą z ding.pl. Kolejność działów ustawisz osobno dla każdego sklepu.</p>`, sh => sh.querySelectorAll('[data-id]').forEach(cb => cb.onchange = () => {
+      const now = [...sh.querySelectorAll('[data-id]:checked')].map(x => x.dataset.id);
+      if (!now.length) { cb.checked = true; toast('Zostaw przynajmniej jeden sklep'); return; }
+      const keep = myIds().filter(id => now.includes(id)), added = now.filter(id => !keep.includes(id));
+      put('settings', { id: 'myStores', value: [...keep, ...added] }, true); PR = {}; prKey = ''; storesKey = ''; render(); promosSoon(); compareSoon(); loadShopPromos(); vib(6); })); }
 let mounted = false;
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
@@ -457,15 +481,16 @@ function mount() {
       <button class="gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
       <button class="round" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></header>
     <section class="hero"><div class="c"><h1 id="h1"></h1><p id="lead"></p></div></section>
-    <nav class="stores" aria-label="Sklep"><div class="c">${CAT.stores.map(s => `<button class="stb" type="button" data-s="${s.id}" style="--sc:${s.color}"><span class="d"></span>${s.name}</button>`).join('')}<button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
+    <nav class="stores" aria-label="Sklep"><div class="c"><div class="stbs" id="stbs"></div><button class="addSt" type="button" aria-label="Moje sklepy">${ic('plus', 2)}</button><button class="ordBtn" type="button" aria-label="Kolejność działów">${ic('grip')}</button></div></nav>
     <main id="list"></main>
     <div class="dock"><div class="chips" id="chips" hidden></div>
       <div class="c bar"><form class="field" id="f"><input id="q" placeholder="Dopisz produkt…" autocomplete="off" enterkeyhint="done"><button class="send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form>
       <button class="mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
     <div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+  addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
   $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet; document.querySelector('.ordBtn').onclick = orderSheet;
-  document.querySelectorAll('.stb').forEach(b => b.onclick = () => { if (b.dataset.s === store()) return; put('settings', { id: 'store', value: b.dataset.s }); PR = {}; prKey = ''; promosSoon(); vib(6); });
+  document.querySelector('.addSt').onclick = storesSheet;
   const q = $('#q'), f = $('#f'); q.oninput = () => f.classList.toggle('has', !!q.value.trim());
   f.onsubmit = e => { e.preventDefault(); const t = q.value; q.value = ''; f.classList.remove('has');
     const learned = editFrom ? learnFromEdit(editFrom, t) : []; editFrom = null;
@@ -481,7 +506,7 @@ function render() {
   if (!token) { mounted = false; return renderPin(); }
   if (!mounted) { mount(); heroKey = ''; }
   const s = storeOf(store()), all = Object.values(C.items).filter(i => !i.deleted), n = all.filter(i => !i.done).length;
-  document.querySelectorAll('.stb').forEach(b => b.classList.toggle('on', b.dataset.s === s.id));
+  renderStores();
   $('#menuBtn').classList.toggle('off', !online);
   const day = ['w niedzielę', 'w poniedziałek', 'we wtorek', 'w środę', 'w czwartek', 'w piątek', 'w sobotę'][new Date().getDay()];
   const h1 = !all.length ? `Co kupujemy<br><mark>${day}?</mark>` : n ? `Do kupienia<br><mark>${n} ${plural(n, 'rzecz', 'rzeczy', 'rzeczy')}</mark>` : 'Wszystko<br><mark>w koszyku</mark>';

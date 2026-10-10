@@ -136,7 +136,9 @@
     "dziecko",
     "zwierzeta",
     "dom"
-   ]
+   ],
+   "in": "Lidlu",
+   "thru": "Lidla"
   },
   {
    "id": "biedronka",
@@ -164,7 +166,9 @@
     "dziecko",
     "zwierzeta",
     "dom"
-   ]
+   ],
+   "in": "Biedronce",
+   "thru": "Biedronkę"
   },
   {
    "id": "kaufland",
@@ -192,7 +196,526 @@
     "dziecko",
     "zwierzeta",
     "dom"
-   ]
+   ],
+   "in": "Kauflandzie",
+   "thru": "Kauflanda"
+  },
+  {
+   "id": "auchan",
+   "name": "Auchan",
+   "color": "#e2001a",
+   "ding": [
+    73,
+    1066
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Auchan",
+   "thru": "Auchan"
+  },
+  {
+   "id": "carrefour",
+   "name": "Carrefour",
+   "color": "#004e9f",
+   "ding": [
+    51,
+    15,
+    23
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Carrefourze",
+   "thru": "Carrefoura"
+  },
+  {
+   "id": "aldi",
+   "name": "Aldi",
+   "color": "#00205b",
+   "ding": [
+    45
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Aldi",
+   "thru": "Aldi"
+  },
+  {
+   "id": "netto",
+   "name": "Netto",
+   "color": "#f2c200",
+   "ding": [
+    156
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Netto",
+   "thru": "Netto"
+  },
+  {
+   "id": "dino",
+   "name": "Dino",
+   "color": "#e30613",
+   "ding": [
+    117
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Dino",
+   "thru": "Dino"
+  },
+  {
+   "id": "polomarket",
+   "name": "POLOmarket",
+   "color": "#d71920",
+   "ding": [
+    92
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "POLOmarkecie",
+   "thru": "POLOmarket"
+  },
+  {
+   "id": "stokrotka",
+   "name": "Stokrotka",
+   "color": "#1d9b3e",
+   "ding": [
+    93,
+    1065,
+    1105
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Stokrotce",
+   "thru": "Stokrotkę"
+  },
+  {
+   "id": "intermarche",
+   "name": "Intermarché",
+   "color": "#e2001a",
+   "ding": [
+    256
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Intermarché",
+   "thru": "Intermarché"
+  },
+  {
+   "id": "zabka",
+   "name": "Żabka",
+   "color": "#1d7a3a",
+   "ding": [
+    219
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Żabce",
+   "thru": "Żabkę"
+  },
+  {
+   "id": "lewiatan",
+   "name": "Lewiatan",
+   "color": "#e30613",
+   "ding": [
+    78
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Lewiatanie",
+   "thru": "Lewiatana"
+  },
+  {
+   "id": "centrum",
+   "name": "Delikatesy Centrum",
+   "color": "#f39200",
+   "ding": [
+    113
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Delikatesach Centrum",
+   "thru": "Delikatesy Centrum"
+  },
+  {
+   "id": "leclerc",
+   "name": "E.Leclerc",
+   "color": "#0063b0",
+   "ding": [
+    120
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "E.Leclerc",
+   "thru": "E.Leclerc"
+  },
+  {
+   "id": "topaz",
+   "name": "Topaz",
+   "color": "#d7141a",
+   "ding": [
+    584
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Topazie",
+   "thru": "Topaz"
+  },
+  {
+   "id": "spar",
+   "name": "SPAR",
+   "color": "#00843d",
+   "ding": [
+    211,
+    1158,
+    1318
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "SPAR-ze",
+   "thru": "SPAR"
+  },
+  {
+   "id": "hebe",
+   "name": "Hebe",
+   "color": "#e6007e",
+   "ding": [
+    67
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Hebe",
+   "thru": "Hebe"
+  },
+  {
+   "id": "selgros",
+   "name": "Selgros",
+   "color": "#003c7d",
+   "ding": [
+    91
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Selgrosie",
+   "thru": "Selgros"
+  },
+  {
+   "id": "makro",
+   "name": "Makro",
+   "color": "#003d7c",
+   "ding": [
+    104
+   ],
+   "order": [
+    "warzywa",
+    "pieczywo",
+    "nabial",
+    "wedliny",
+    "mieso",
+    "mrozonki",
+    "suche",
+    "konserwy",
+    "przyprawy",
+    "sniadanie",
+    "kawa",
+    "napoje",
+    "alkohol",
+    "chemia",
+    "higiena",
+    "dziecko",
+    "zwierzeta",
+    "dom"
+   ],
+   "in": "Makro",
+   "thru": "Makro"
   }
  ],
  "keywords": {

@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const { localParse } = require('./lib/local-parse');
 const { aiParse, aiOn } = require('./lib/ai');
 const { promosFor, leaflet } = require('./lib/promos');
-const CAT_STORES = () => require('./public/catalog.json').stores.map(s => s.id);
+const CAT_STORES = () => { const m = db && db.collections && db.collections.settings && db.collections.settings.myStores; return Array.isArray(m && m.value) && m.value.length ? m.value : ['lidl', 'biedronka', 'kaufland']; };   // (the family's shops)
 
 const PORT = process.env.PORT || 8820;
 const PIN = process.env.KOSZYK_PIN || '1234';
