@@ -13,6 +13,8 @@ node server.js        # http://localhost:8820, PIN dev 1234
 
 Dane lokalnie: `data/db.json` (poza repo).
 
+Testy parsera dyktowania: `npm test`.
+
 ## Produkcja (Render)
 
 Repo ma `render.yaml` (Blueprint). Pierwsze uruchomienie:
