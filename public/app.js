@@ -120,6 +120,8 @@ function promosSoon() { clearTimeout(prT); prT = setTimeout(async () => {
   const names = [...new Set([...open, ...usual])], key = s.id + '|' + names.join('|'); if (key === prKey) return; prKey = key;
   try { const r = await api('/api/promos', { store: s.id, names }); if (r.store === store()) { PR = r.promos || {}; render(); if (!promoChecked) setTimeout(promoChanges, 700); else snapshotPromos(); } } catch { } }, 900); }
 const bestOffer = name => (PR[name] || [])[0];
+const termsHtml = o => { const t = [...(o.size ? [o.size] : []), ...(o.cond || [])]; return t.length ? `<span class="terms">${t.map(x => `<span class="tc${/przy zakupie|gratis|2\. sztuka/.test(x) ? ' multi' : /kart|aplikac/.test(x) ? ' card' : /limit|wybranych/.test(x) ? ' lim' : ''}">${esc(x)}</span>`).join('')}</span>` : ''; };
+const perUnit = o => o.unit ? ` / ${o.unit}` : '';
 // ---------- promotions that ended or began since the last visit: said once, when you come back ----------
 // (each product on the list remembers the cut it had in this shop; nothing is removed unless you tap the cross)
 let promoChecked = false;
@@ -272,7 +274,7 @@ function rowEl(it) {
   row.innerHTML = `<div class="del">Usuń</div><div class="line"><div class="c">
     <span class="em${emojiOf(it) ? '' : ' none'}" style="--tile:var(--t-${it.cat})">${emojiOf(it) ? esc(emojiOf(it)) : ''}</span>
     <div class="txt"><div class="nm"><b>${esc(it.name)}</b>${q ? `<span class="qty">${esc(q)}</span>` : ''}<svg class="strike" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="${pencil(it.id)}"/></svg></div>
-      ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p ? `<button class="deal" type="button" data-promo aria-label="Promocja: ${esc(p.name)}">${pct(p) ? `<span class="pill">${pct(p)}</span>` : ''}<span class="dn">${esc(p.name)}</span><span class="dp"><b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</span></button>` : ''}
+      ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p ? `<button class="deal" type="button" data-promo aria-label="Promocja: ${esc(p.name)}">${pct(p) ? `<span class="pill">${pct(p)}</span>` : ''}<span class="dn"><span class="dnn">${esc(p.name)}</span>${p.cond && p.cond.length ? `<small class="dcond">${esc(p.cond.join(' · '))}</small>` : ''}</span><span class="dp"><b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</span></button>` : ''}
       ${!it.done && it.q ? `<div class="ask"><span>${esc(it.q)}</span>${(it.opts || []).map(o => `<button type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}</div>
     <button class="chk" type="button" aria-pressed="${done}" aria-label="${done ? 'Przywróć' : 'Kupione'}: ${esc(it.name)}">${ic('check', 2.4)}</button></div></div>`;
   row.querySelector('.chk').onclick = () => tick(row, it);
@@ -296,11 +298,9 @@ function renderList() {
   if (total && best) { const B = CMP[best.id];
     wrap.insertAdjacentHTML('beforeend', `<section class="cmp"><div class="h"><div class="c">Gdzie dziś taniej</div></div>
       <div class="lead"><div class="c">W <mark>${IN[best.id]}</mark> ${B.n === 1 ? 'jeden produkt' : B.n + ' ' + plural(B.n, 'produkt', 'produkty', 'produktów')} z Twojej listy ${plural(B.n, 'jest', 'są', 'jest')} w promocji, zaoszczędzisz około ${zl(B.save)}.</div></div>
-      <div class="grid">${cs.map(x => `<div class="cell${x.id === best.id ? ' best' : ''}${CMP[x.id].n ? '' : ' none'}" style="--sc:${x.color}"><span class="s"><i></i>${x.name}</span><b>${CMP[x.id].n ? '−' + zl(CMP[x.id].save) : '—'}</b><small>${CMP[x.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')}</small></div>`).join('')}</div>
-      ${(() => { const ss = cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save), one = x => `<div class="hs" style="--sc:${x.color}"><div class="hn"><i></i>${x.name}</div>${CMP[x.id].hits.map(({ item, o }) => `<div class="hr"><span class="hi">${esc(item)}</span><span class="ho">${esc(o.name)}</span><span class="hp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b><s>${zl(o.oldPrice)}</s></span></div>`).join('')}</div>`;
-        // (the cheapest shop in full; the others behind one tap)
-        return `<div class="hits">${one(ss[0])}${ss.length > 1 ? `<details class="hmore"><summary>Pokaż pozostałe sklepy (${ss.length - 1})</summary>${ss.slice(1).map(one).join('')}</details>` : ''}</div>`; })()}
-      <p class="note">Liczymy tylko to, co jeszcze do kupienia, i tylko obniżki z gazetek. Pełnego kosztu zakupów nie podajemy, bo sklepy nie publikują zwykłych cen.</p></section>`); }
+      <div class="grid">${cs.filter(x => CMP[x.id].n).sort((a, b) => CMP[b.id].save - CMP[a.id].save).map(x => `<button type="button" class="cell${x.id === best.id ? ' best' : ''}" data-cmp="${x.id}" style="--sc:${x.color}"><span class="s"><i></i>${x.name}</span><b>−${zl(CMP[x.id].save)}</b><small>${CMP[x.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')}</small><span class="go">Szczegóły ${ic('chev', 2)}</span></button>`).join('')}</div>
+      <p class="note">Liczymy tylko to, co jeszcze do kupienia, i tylko obniżki z gazetek. Dotknij sklepu, żeby zobaczyć produkty i warunki promocji.</p></section>`);
+    wrap.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => dealsSheet(b.dataset.cmp)); }
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
   renderShopPromos(wrap, open); }
@@ -331,7 +331,7 @@ async function loadShopPromos() { const need = MY().filter(x => EP[x.id] === und
     for (const o of r.items || []) { const k = norm(o.name); if (!best[k] || offPct(o) > offPct(best[k]) || (offPct(o) === offPct(best[k]) && o.price < best[k].price)) best[k] = o; }
     EP[s.id] = Object.values(best); } catch { EP[s.id] = EP[s.id] || null; } }));
   epAt = Date.now(); epBusy = false; chipsKey = ''; render(); }
-const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en">${esc(o.name)}</span><span class="dp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
+const epRow = o => `<button class="ep" type="button" data-add="${esc(o.name)}" data-cat="${esc(o.cat || '')}" style="--tile:var(--t-${o.cat || 'dom'})"><span class="em">${esc(o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒')}</span><span class="en"><span class="enn">${esc(o.name)}</span>${termsHtml(o)}</span><span class="dp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</span><span class="pl" aria-hidden="true">${ic('plus', 2.2)}</span></button>`;
 const wireAdds = (root, keep) => root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.add, category: b.dataset.cat || undefined }]); vib(8);
   if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${b.dataset.add}`); } else if (added.length) snack(added, b.dataset.add); });
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
@@ -421,8 +421,19 @@ function dragOrder(box, done) {   // (drag a row by its handle; the others make 
     const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); rows.forEach(r => { r.style.transform = ''; }); row.classList.remove('lift');
       if (to !== i0) { rows.splice(i0, 1); rows.splice(to, 0, row); rows.forEach(r => box.appendChild(r)); done(rows.map(r => r.dataset.c)); vib(8); } };
     g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); })); }
+function dealsSheet(id) { const D = CMP[id]; if (!D || !D.n) return; const total = openItems().length, sh0 = storeOf(id);
+  const byName = n => openItems().find(i => i.name === n) || { name: n, cat: 'dom' };
+  const close = sheet(`<h3>Taniej w ${esc(IN[id] || sh0.name)}</h3><p class="sub">${D.n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z Twojej listy w promocji. Razem około ${zl(D.save)} mniej.</p>
+    <div class="dls">${D.hits.map(({ item, o }) => { const it = byName(item), save = o.oldPrice - o.price; return `<div class="dl">
+      <div class="dlh"><span class="em" style="--tile:var(--t-${it.cat})">${esc(emojiOf(it) || '•')}</span><span class="dli"><small>Z Twojej listy</small><b>${esc(item)}</b></span><span class="dlp">${pct(o) ? `<span class="pill">${pct(o)}</span>` : ''}<b>${zl(o.price)}${perUnit(o)}</b><s>${zl(o.oldPrice)}</s></span></div>
+      <div class="dlo">${esc(o.name)}</div>${o.detail && o.detail !== o.name ? `<div class="dld">${esc(o.detail)}</div>` : ''}
+      ${termsHtml(o)}
+      ${o.multi > 1 ? `<p class="dlw">Cena promocyjna przy zakupie ${o.multi} szt. Za jedną sztukę zapłacisz zwykłą cenę.</p>` : ''}
+      <p class="dls2">Oszczędzasz ${zl(save)}${o.multi > 1 ? ' na sztuce' : ''} · do ${dm(o.until)}</p></div>`; }).join('')}</div>
+    ${id !== store() ? `<div class="pcb"><button type="button" class="ok" data-go>Ułóż listę pod ${esc(sh0.thru || sh0.name)}</button></div>` : ''}`, sh => {
+    const g = sh.querySelector('[data-go]'); if (g) g.onclick = () => { put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); close(); vib(6); }; }); }
 function offersSheet(it) { const s = storeOf(store()), offs = PR[it.name] || [], d = x => `${x.slice(8, 10)}.${x.slice(5, 7)}`;
-  sheet(`<h3>${esc(it.name)} taniej</h3><div class="list">${offs.map(o => `<div class="off"><div>${esc(o.name)}<small>${s.name} · ${d(o.from)} – ${d(o.until)}</small></div><div class="r"><b>${zl(o.price)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</div></div>`).join('')}</div><p class="hint">Ceny z gazetek promocyjnych (ding.pl). Sprawdź warunki w sklepie, np. aplikację albo kupno kilku sztuk.</p>`); }
+  sheet(`<h3>${esc(it.name)} taniej</h3><div class="list">${offs.map(o => `<div class="off"><div>${esc(o.name)}<small>${s.name} · ${d(o.from)} – ${d(o.until)}</small>${termsHtml(o)}${o.detail ? `<small class="odet">${esc(o.detail)}</small>` : ''}</div><div class="r"><b>${zl(o.price)}${perUnit(o)}</b>${o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : ''}</div></div>`).join('')}</div><p class="hint">Ceny z gazetek promocyjnych (ding.pl). Sprawdź warunki w sklepie, np. aplikację albo kupno kilku sztuk.</p>`); }
 // ---------- the dictation dictionary: what I say → how it is written ----------
 function wordsSheet() { const mine = Object.entries(myAliases()).sort((a, b) => a[0].localeCompare(b[0], 'pl')), n = Object.keys(CAT.aliases || {}).length;
   const close = sheet(`<h3>Słownik dyktowania</h3><p class="sub">Gdy powiesz słowo po lewej, na liście pojawi się to po prawej. Uczy się też samo: popraw dodany produkt przyciskiem „Zmień”.</p>
