@@ -181,7 +181,6 @@ svg { display: block; }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 .empty h2 { margin-top: 22px; font-size: 24px; }
 .ex { animation: rise .45s var(--ease) both; } .ex + .ex { animation-delay: .08s; }
-.picks { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; padding-bottom: 22px; }
 .eps { border-bottom: 1px solid var(--line); }
 .esh { display: flex; align-items: center; gap: 9px; max-width: var(--w); margin: 0 auto; padding: 16px 20px 6px; font-size: 15px; font-weight: 650; }
 .esh i { width: 9px; height: 9px; border-radius: 50%; background: var(--sc); }
@@ -538,7 +537,6 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .empty .c { padding-top: var(--s-9); padding-bottom: var(--s-8); }
 .empty h2 { margin-top: var(--s-6); }
 .empty p { margin-top: var(--s-2); }
-.ex .picks { gap: var(--s-2); padding-top: var(--s-5); padding-bottom: var(--s-7); }
 .ex + .ex { margin-top: var(--s-2); }
 
 /* the shop switcher in place of the row of pills */
@@ -610,3 +608,9 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 /* browsing: a firm band between your list and the suggestions under it */
 .brk { height: 12px; margin-top: var(--s-6); background: var(--soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .brk + .sec.ex .h .c { padding-top: var(--s-5); }
+
+/* browsing: the deals as clean text rows with dividers (no product icons) */
+.ex .eps .ep .em { display: none; }
+.ex .eps .ep { min-height: 64px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.ex .eps .esh + .ep { border-top: 1px solid var(--line); }
+.ex .eps .ep:first-of-type { margin-top: 0; } .ex .eps .ep:last-of-type { margin-bottom: 0; }

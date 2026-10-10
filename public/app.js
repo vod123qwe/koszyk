@@ -206,11 +206,13 @@ function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))
   for (const [name, cat] of CAT.common || []) { if (out.length >= 18) break; const k = norm(name); if (!seen.has(k) && !onList.has(k)) { seen.add(k); out.push({ name, cat }); } }
   return out.slice(0, 18); }
 function freqHtml() { const picks = freqPicks(); if (!picks.length) return '';
-  // (two rows packed by width, so there are no gaps between pills)
+  return `<section class="freq" data-anchor="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div>${pillRows(picks)}</section>`; }
+// (two rows packed by width, so there are no gaps between pills; the rows scroll sideways together)
+function pillRows(picks) {
   const rows = [[], []], w = [0, 0]; picks.forEach((p, i) => { const r = w[0] <= w[1] ? 0 : 1; rows[r].push([p, i]); w[r] += p.name.length + 6; });
   const pill = ([p, i]) => { const o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0;
     return `<button type="button" class="chip chip--tile frq__chip" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--tile:var(--t-${p.cat || 'dom'});--i:${i}"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${deal ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; };
-  return `<section class="freq" data-anchor="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div><div class="frq"><div class="frq__rows">${rows.map(r => `<div class="frq__row">${r.map(pill).join('')}</div>`).join('')}</div></div></section>`; }
+  return `<div class="frq"><div class="frq__rows">${rows.map(r => `<div class="frq__row">${r.map(pill).join('')}</div>`).join('')}</div></div>`; }
 function suggestions() {
   const open = new Set(openItems().map(i => norm(i.name))), now = Date.now(), hs = Object.values(C.history).filter(h => !open.has(h.id) && looksLikeProduct(h));
   const promo = hs.map(h => ({ h, p: bestOffer(h.name) || leafHit(h.name, h.cat) })).filter(x => x.p).sort((a, b) => offPct(b.p) - offPct(a.p)).slice(0, 6);   // (on the list's promos or anywhere in this shop's leaflet)
@@ -555,7 +557,7 @@ function renderEmpty(wrap) {
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
       : rankLeaf(l).slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
     return `<div class="eps" data-store="${s.id}" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
-  wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div><div class="c picks">${picks.map((p, i) => { const o = leafHit(p.name, p.cat); return `<button class="chip chip--tile frq__chip" type="button" data-add="${esc(p.name)}" data-cat="${esc(p.cat || '')}" style="--i:${i};--tile:var(--t-${p.cat || 'dom'})"><span class="e">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span>${esc(p.name)}${o && pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : ''}<span class="frq__plus" aria-hidden="true">${ic('plus', 2.2)}</span></button>`; }).join('')}</div></section>` : ''}
+  wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div>${pillRows(picks)}</section>` : ''}
     <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${(() => { const picked = stores.filter(x => (EP[x.id] || []).some(o => has(o.title || o.name))); return (picked.length ? [picked.find(x => x.id === cur) || picked[0]] : stores).map(promoBlock).join(''); })()}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
   exShown = true; wireAdds(wrap.querySelectorAll('.ex'), false, true); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
