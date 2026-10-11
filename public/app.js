@@ -450,10 +450,28 @@ function buildList() {
 const STAPLES = [['Mleko', 'nabial'], ['Chleb', 'pieczywo'], ['Jajka', 'nabial'], ['Masło', 'nabial'], ['Banany', 'warzywa'], ['Pomidory', 'warzywa'], ['Ser żółty', 'wedliny'], ['Kawa', 'kawa'], ['Jogurt', 'nabial'], ['Makaron', 'suche'], ['Kurczak', 'mieso'], ['Jabłka', 'warzywa'], ['Ziemniaki', 'warzywa'], ['Woda', 'napoje'], ['Papier toaletowy', 'higiena'], ['Płyn do naczyń', 'chemia']];
 let EP = {}, epAt = 0, epBusy = false;
 const looksLikeProduct = h => h.name.length <= 32 && h.name.trim().split(/\s+/).length <= 4;   // (dictated notes to the app live in history too)
-const L_ = 'a-ząćęłńóśźż', stemOf = w => w.slice(0, Math.max(4, Math.min(6, w.length - 1)));
-// (does this offer fit that product? a short word must be the word itself: "sok" is not "Sokołów")
-function offerFits(offerName, product) { const t = norm(product).split(' ').find(w => w.length >= 3); if (!t) return false;
-  return t.length <= 3 ? new RegExp('(^|[^' + L_ + '])' + t + '[' + L_ + ']?([^' + L_ + ']|$)', 'i').test(offerName) : (' ' + offerName.toLowerCase()).includes(' ' + stemOf(t)); }
+const stemOf = w => w.slice(0, Math.max(4, Math.min(6, w.length - 1)));
+// (does this offer fit that product? The same rules as the server (lib/promos.js): any form of the product's word, without Polish
+//  marks too; not a word made from it ("pomidorowy"), not an ingredient ("z mozzarellą", "w czekoladzie"), not said later in a name
+//  about something else ("Ser salami", "Parówki z szynki"), not a lookalike ("cukierki" for "cukier"); "sok" is not "Sokołów")
+const foldPL = s => String(s).toLowerCase().replace(/[ąćęłńóśźż]/g, c => 'acelnoszz'['ąćęłńóśźż'.indexOf(c)]);
+const ADJ_END = /(owy|owa|owe|owym|owej|owych|owego|ny|na|ne|nym|nej|nych|nego|ski|ska|skie|skim|cki|cka|ckie)$/, INSTR = /(ą|em|ami|mi)$/;
+const LEAD_ = new Set('polski polska polskie swiezy swieza swieze wszystkie wybrane mlode mlody mloda mrozone mrozony mrozona wloskie wloski wloska dziki dzika dzikie bio eko nowy nowa nowe wiejski wiejska wiejskie puszysty puszyste premium protein proteinowy miks mix zestaw lub i oraz'.split(' '));
+const CUT_ = /^(filet|piers|cwiart|mies|udk|uda|udo|nog|podud|skrzyd|poledwic|tusz|porcj|kostk|stek|kawal|plat|mostek|golonk|gulasz|schab|karkow|lopatk|zeberk)/;
+const OTHER_ = { cukier: ['cukierk'], oliwa: ['oliwk'], smietana: ['smietank'], olej: ['olejek', 'olejk'], makaron: ['makaronik'], salata: ['salatk'], czekolada: ['czekoladk'], cebula: ['cebulk'], kawa: ['kawal'] };
+const headOf_ = (raw, i) => { let s = 0; for (let k = 0; k < i; k++) if (/,$/.test(raw[k]) || /^[–-]$/.test(raw[k])) s = k + 1;
+  for (let j = s; j < raw.length; j++) { const w = raw[j].replace(/[^\p{L}\d]/gu, ''); if (w.length <= 2 || /\d/.test(w) || w === w.toUpperCase() || LEAD_.has(foldPL(w))) continue; return j; } return -1; };
+function offerFits(offerName, product) { const tf = foldPL(product).split(/[\s-]+/).map(w => w.replace(/[^a-z0-9]/g, '')).find(w => w.length >= 3); if (!tf) return false;
+  const raw = String(offerName).split(/\s+/), st = stemOf(tf), it = foldPL(product);
+  for (let i = 0; i < raw.length; i++) { const w0 = raw[i].replace(/[^\p{L}\d-]/gu, ''); if (!w0) continue; const capital = i > 0 && w0[0] !== w0[0].toLowerCase();
+    for (const part of w0.split('-').filter(Boolean)) { const p = foldPL(part), brand = capital && tf.length >= 4 && p === tf;
+      const hit = capital ? brand : tf.length <= 3 ? new RegExp('^' + tf + '[a-z]?$').test(p) : p.startsWith(st) && !(p.length - st.length >= 3 && ADJ_END.test(p));
+      if (!hit || (OTHER_[tf] || []).some(o => p.startsWith(o))) continue;
+      const prev = (raw[i - 1] || '').toLowerCase().replace(/[^\p{L}]/gu, ''), zBefore = raw.slice(Math.max(0, i - 4), i).some(x => /^(z|ze)$/i.test(x));
+      if (/^(w|we|do|dla|o|na|od|po|pod|bez|smaku)$/.test(prev) || (zBefore && (INSTR.test(part) || INSTR.test(prev)))) continue;
+      const h = headOf_(raw, i); if (!brand && h >= 0 && h < i) { const hw = foldPL(raw[h].replace(/[^\p{L}]/gu, '')); if (!CUT_.test(hw) && !it.includes(hw.slice(0, 4))) continue; }
+      return true; } }
+  return false; }
 const mine = () => Object.values(C.history).filter(looksLikeProduct).sort((a, b) => b.count - a.count || b.lastAt - a.lastAt);
 const leafHit = (name, cat) => (EP[store()] || []).find(o => offerFits(o.name, name) && (!cat || cat === 'dom' || !o.cat || o.cat === 'dom' || o.cat === cat));
 const offPct = o => o.oldPrice ? 1 - o.price / o.oldPrice : 0;

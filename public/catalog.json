@@ -720,6 +720,9 @@
  ],
  "keywords": {
   "warzywa": [
+   "grejpfrut",
+   "jeżyn",
+   "wodorost",
    "ziemniak",
    "pomidor",
    "ogór",
@@ -804,6 +807,11 @@
    "mix sałat"
   ],
   "pieczywo": [
+   "bochen",
+   "ministrucl",
+   "donut",
+   "słomka ptysiowa",
+   "babka",
    "chleb",
    "bułk",
    "bulk",
@@ -884,6 +892,10 @@
    "ser kozi"
   ],
   "mieso": [
+   "perliczk",
+   "dorad",
+   "surimi",
+   "flaki",
    "mięso",
    "mieso",
    "kurczak",
@@ -986,6 +998,14 @@
    "trewal"
   ],
   "mrozonki": [
+   "pierożk",
+   "gyoza",
+   "lasagne",
+   "kopytk",
+   "kluski",
+   "frykadel",
+   "klopsik",
+   "hot dog",
    "mrożon",
    "mrozon",
    "lody",
@@ -1005,6 +1025,8 @@
    "magnum"
   ],
   "suche": [
+   "ramen",
+   "skrobia",
    "makaron",
    "spaghetti",
    "penne",
@@ -1013,8 +1035,6 @@
    "kasz",
    "mąka",
    "maka",
-   "płatki owsiane",
-   "platki owsiane",
    "musli",
    "granol",
    "bułka tarta",
@@ -1037,6 +1057,7 @@
    "rodzynk"
   ],
   "konserwy": [
+   "antipasti",
    "konserw",
    "słoik",
    "sloik",
@@ -1088,6 +1109,9 @@
    "grzybki marynowane"
   ],
   "przyprawy": [
+   "pasta miso",
+   "miso",
+   "baza do ramenu",
    "sól",
    "sol",
    "pieprz",
@@ -1129,6 +1153,22 @@
    "bulion"
   ],
   "sniadanie": [
+   "krem do smarowania",
+   "chałw",
+   "torcik",
+   "panettone",
+   "bomboniera",
+   "drażetk",
+   "czokowafl",
+   "pudding",
+   "snack",
+   "mieszanka studencka",
+   "pistacj",
+   "żurawin",
+   "morele",
+   "konfitur",
+   "płatki owsiane",
+   "platki owsiane",
    "płatki",
    "platki",
    "czekolad",
@@ -1212,6 +1252,7 @@
    "szarlotk"
   ],
   "kawa": [
+   "matcha",
    "kaw",
    "herbat",
    "kakao",
@@ -1231,6 +1272,9 @@
    "teekanne"
   ],
   "napoje": [
+   "ice tea",
+   "coca cola",
+   "coca-cola",
    "woda",
    "wody",
    "sok",
@@ -1273,6 +1317,13 @@
    "kompot"
   ],
   "alkohol": [
+   "fortuna",
+   "corona",
+   "aperitivo",
+   "metaxa",
+   "captain morgan",
+   "spirit drink",
+   "gotowy koktajl",
    "piwo",
    "piwa",
    "wino",
@@ -1330,6 +1381,7 @@
    "piwo bezalkoholowe"
   ],
   "chemia": [
+   "do zmywarki",
    "płyn do",
    "plyn do",
    "proszek do prania",
@@ -1394,6 +1446,7 @@
    "ściereczk"
   ],
   "higiena": [
+   "żel do golenia",
    "papier toaletow",
    "mydł",
    "mydl",
@@ -1497,6 +1550,7 @@
    "kaszk"
   ],
   "zwierzeta": [
+   "do żwirku",
    "karma",
    "żwirek",
    "zwirek",
@@ -2253,6 +2307,23 @@
   ["chappi", "🐕"]
  ],
  "brands": [
+  "vizir",
+  "head",
+  "shoulders",
+  "cif",
+  "lays",
+  "lay's",
+  "lajkonik",
+  "szampion",
+  "old spice",
+  "silan",
+  "perwoll",
+  "zewa",
+  "sensodyne",
+  "oral-b",
+  "bella",
+  "kitty",
+  "cleo",
   "tymbark",
   "hortex",
   "cappy",
@@ -2514,6 +2585,10 @@
   "róża",
   "doniczk",
   "stojak",
+  "kalanchoe",
+  "marker",
+  "butelki na",
+  "butelka na",
   "młynek",
   "książk",
   "tłuczek",
