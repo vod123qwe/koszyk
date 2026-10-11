@@ -105,7 +105,8 @@ function orderFor(id) {
   if (st.custom) return [...st.custom, ...def.filter(c => !st.custom.includes(c))];
   const ses = (st.sessions || []).filter(s => s.cats && s.cats.length >= 3), n = def.length;
   const score = c => { let sum = def.indexOf(c) / (n - 1), w = 1; for (const s of ses) { const i = s.cats.indexOf(c); if (i >= 0) { sum += i / Math.max(1, s.cats.length - 1) * 1.5; w += 1.5; } } return sum / w; };
-  return [...def].sort((a, b) => score(a) - score(b)); }
+  // (alcohol always ends the list, whatever was learned; only an order set by hand moves it)
+  return [...def].sort((a, b) => (a === 'alkohol') - (b === 'alkohol') || score(a) - score(b)); }
 function learn(cat) {
   const id = store(); let s = null; try { s = JSON.parse(localStorage.getItem('koszyk.session') || 'null'); } catch { }
   if (!s || s.store !== id || Date.now() - s.t > 3 * 3600e3) s = { store: id, id: uid(), t: Date.now(), cats: [] };
@@ -454,9 +455,10 @@ const offPct = o => o.oldPrice ? 1 - o.price / o.oldPrice : 0;
 // (the order: what you buy, then the deepest cuts, then plain leaflet prices)
 function rankLeaf(list) { const my = mine().slice(0, 30);
   const score = o => (my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)) ? 2 : 0) + (STAPLES.some(s => offerFits(o.name, s[0])) ? .6 : 0) + offPct(o) + (o.oldPrice ? .2 : 0);
-  const seen = new Set(), sorted = list.filter(o => !seen.has(o.name) && seen.add(o.name)).sort((a, b) => score(b) - score(a));
+  // (alcohol waits at the very end, after every other offer)
+  const seen = new Set(), sorted = list.filter(o => !seen.has(o.name) && seen.add(o.name)).sort((a, b) => (a.cat === 'alkohol') - (b.cat === 'alkohol') || score(b) - score(a));
   // (variety up top: at most two from one aisle in a row, the rest wait their turn)
-  const top = [], later = [], per = {}; for (const o of sorted) { if ((per[o.cat] || 0) < 2 && top.length < 12) { top.push(o); per[o.cat] = (per[o.cat] || 0) + 1; } else later.push(o); }
+  const top = [], later = [], per = {}; for (const o of sorted) { if (o.cat !== 'alkohol' && (per[o.cat] || 0) < 2 && top.length < 12) { top.push(o); per[o.cat] = (per[o.cat] || 0) + 1; } else later.push(o); }
   return [...top, ...later]; }
 function picksForEmpty() { const hs = mine().slice(0, 10).map(h => ({ name: h.name, cat: h.cat, emoji: h.emoji }));
   for (const [name, cat] of STAPLES) { if (hs.length >= 12) break; if (!hs.some(h => norm(h.name) === norm(name))) hs.push({ name, cat }); }
@@ -501,7 +503,7 @@ function leafletsSheet() { loadShopPromos();
   if (MY().some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
 function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
   for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
-  const cats = order.filter(c => by[c]);
+  const cats = [...order.filter(c => by[c] && c !== 'alkohol'), ...(by.alkohol ? ['alkohol'] : [])];
   sheet(`<div class="ltabs" role="tablist">${MY().map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
     <h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} ${leafDates(l)}. Dotknij, żeby dopisać do listy.</p>
     <div class="lcats">${cats.map(c => `<button type="button" class="chip chip--sm chip--tile" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
@@ -557,7 +559,9 @@ function renderEmpty(wrap) {
   const promoBlock = s => { const l = EP[s.id];
     const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
-      : rankLeaf(l).slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
+      // (alcohol never fills the preview; it waits at the end of the whole leaflet)
+      : !l.some(o => o.cat !== 'alkohol') ? `<div class="epw">W tym tygodniu brak promocji spożywczych.</div>${allBtn(s.id, l.length)}`
+      : rankLeaf(l).filter(o => o.cat !== 'alkohol').slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
     return `<div class="eps" data-store="${s.id}" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
   wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div>${pillRows(picks)}</section>` : ''}
     <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${(() => { const picked = stores.filter(x => (EP[x.id] || []).some(o => has(o.title || o.name))); return (picked.length ? [picked.find(x => x.id === cur) || picked[0]] : stores).map(promoBlock).join(''); })()}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);

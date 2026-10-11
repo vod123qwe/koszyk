@@ -945,7 +945,8 @@
    "wątróbk",
    "żołądk",
    "serca drobiowe",
-   "mięso mielone"
+   "mięso mielone",
+   "burger"
   ],
   "wedliny": [
    "szynk",
@@ -981,7 +982,8 @@
    "morliny",
    "berlinki",
    "indykpol",
-   "pikok"
+   "pikok",
+   "trewal"
   ],
   "mrozonki": [
    "mrożon",
@@ -2509,7 +2511,25 @@
   "fikus",
   "storczyk",
   "róża",
-  "doniczk"
+  "doniczk",
+  "stojak",
+  "młynek"
+ ],
+ "nonfoodBrands": [
+  "silvercrest",
+  "parkside",
+  "esmara",
+  "livarno",
+  "crivit",
+  "lupilu",
+  "pepperts",
+  "ernesto",
+  "florabest",
+  "auriol",
+  "melinera",
+  "miomare",
+  "hoffen",
+  "havit"
  ],
  "varieties": {
   "ser": [
