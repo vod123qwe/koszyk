@@ -5,6 +5,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { localParse } = require('./lib/local-parse');
 const { aiParse, aiOn } = require('./lib/ai');
 const { promosFor, leaflet } = require('./lib/promos');
@@ -58,7 +59,10 @@ const state = () => ({ rev: db.rev, collections: db.collections, ai: aiOn });
 // ---------- http ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon' };
-function send(res, status, data) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(typeof data === 'string' ? data : JSON.stringify(data)); }
+// (big answers, like a whole leaflet with photos, go gzipped: a few hundred kB become a few dozen on the phone)
+function send(res, status, data) { const body = typeof data === 'string' ? data : JSON.stringify(data), head = { 'Content-Type': 'application/json; charset=utf-8' };
+  if (body.length > 20000 && /\bgzip\b/.test((res.req && res.req.headers['accept-encoding']) || '')) { head['Content-Encoding'] = 'gzip'; head.Vary = 'Accept-Encoding'; res.writeHead(status, head); return res.end(zlib.gzipSync(body)); }
+  res.writeHead(status, head); res.end(body); }
 function readBody(req) { return new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) req.destroy(); }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { no(new Error('bad json')); } }); req.on('error', no); }); }
 function serveStatic(res, p) { let file = p === '/' ? '/index.html' : p; file = path.normalize(file).replace(/^([.]{2}[/\\])+/, '');
   const full = path.join(PUBLIC_DIR, file); if (!full.startsWith(PUBLIC_DIR)) return send(res, 403, { error: 'forbidden' });

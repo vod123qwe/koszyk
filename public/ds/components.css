@@ -195,3 +195,78 @@ input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 
 .tile--line.tile--quiet .tile__meta, .tile--line.tile--quiet .tile__title { color: var(--muted); }
 .tile--line .tile__go, .tile--line.tile--quiet .tile__go { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
 @media (hover: hover) { button.tile--line:hover { filter: none; background: var(--soft); } button.tile--line:hover .tile__go { background: var(--bg); } }
+
+/* ---------- Skeleton: the shape of what is coming, shown while it loads (never a spinner). One shimmer for all;
+   shapes: line (text), block (photo, price), round. Still when the user asks for less motion. ---------- */
+.skel { display: block; border-radius: var(--r-xs); background: var(--skel) linear-gradient(100deg, transparent 30%, var(--skelHi) 50%, transparent 70%) 0 0 / 220% 100% no-repeat;
+  animation: skel 1.3s linear infinite; }
+.skel--line { height: 12px; } .skel--text { height: 15px; } .skel--price { height: 20px; width: 64px; border-radius: var(--r-xs); }
+.skel--block { width: 100%; aspect-ratio: 1; border-radius: var(--r-md); } .skel--round { border-radius: var(--r-full); }
+@keyframes skel { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+.is-loading { pointer-events: none; }
+
+/* ---------- Segmented: one of a few ways to look at the same thing (tiles / list) or one of a few places (shops).
+   block = full width, equal parts. ---------- */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-full); background: var(--soft); }
+.seg > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 38px; height: 34px; padding: 0 var(--s-3); border-radius: var(--r-full);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); white-space: nowrap; transition: background var(--dur-2), color var(--dur-2), box-shadow var(--dur-2); }
+.seg > button svg { width: 18px; height: 18px; flex: none; }
+.seg > button small { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); opacity: .8; }
+.seg > button .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc, var(--muted)); }
+.seg > button[aria-pressed=true], .seg > button[aria-selected=true] { background: var(--bg); color: var(--ink); box-shadow: var(--shadow-1); }
+.seg > button:focus-visible { outline: 2px solid var(--aqua); outline-offset: 1px; }
+.seg--block { display: flex; width: 100%; } .seg--block > button { flex: 1; min-width: 0; padding: 0 var(--s-2); }
+.seg--block > button span { overflow: hidden; text-overflow: ellipsis; }
+.seg--icons > button { padding: 0; width: 38px; }
+
+/* ---------- Offer, card: one offer in a 2-column leaflet. Photo (on white) or the aisle tile with its icon on top,
+   the discount on the photo, then price, name (2 lines), size and terms. The whole card adds it; on the list = a check. ---------- */
+.offers--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); border: 0; }
+.offer--card { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0; min-width: 0; padding: var(--s-2) var(--s-2) var(--s-3); border: 0;
+  border-radius: var(--r-lg); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); text-align: left; transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-2); }
+.offer--card:active { transform: scale(.98); }
+.offer--card .offer__media { position: relative; width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--r-md); font-size: 46px; overflow: hidden; }
+.offer__media img { width: 100%; height: 100%; object-fit: contain; }
+.offer__media--photo { background: var(--photo); padding: var(--s-2); }
+.offer--card .offer__media .badge { position: absolute; left: var(--s-2); top: var(--s-2); }
+.offer--card .offer__price { margin: var(--s-3) var(--s-1) 0; gap: 6px; } .offer--card .offer__price b { font-size: var(--fs-lg); }
+.offer--card .offer__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 0; margin: 2px var(--s-1) 0;
+  font-size: var(--fs-sm); line-height: 1.3; }
+.offer--card .offer__meta { margin: 3px var(--s-1) 0; }
+.offer.offer--card .terms { display: flex; flex-wrap: wrap; gap: 4px; margin: var(--s-2) var(--s-1) 0; }
+.offer__add { position: absolute; right: var(--s-3); top: var(--s-3); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--bg); color: var(--cta); box-shadow: var(--shadow-1); transition: background var(--dur-2), color var(--dur-2); }
+.offer__add svg { width: 18px; height: 18px; }
+.offer--card .offer__add { top: calc(var(--s-2) + var(--s-2)); right: calc(var(--s-2) + var(--s-2)); }
+.offer.is-in .offer__add { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
+.offer.is-in { box-shadow: inset 0 0 0 1.6px var(--cta); }
+@media (hover: hover) { .offer--card:hover { box-shadow: inset 0 0 0 1px var(--faint); } }
+
+/* ---------- Offer, row: the same offer as one line (the list view of a leaflet): media, name with size and terms, price, add. ---------- */
+.offer--row { position: relative; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; column-gap: var(--s-3); padding: var(--s-3) var(--s-2) var(--s-3) 0;
+  width: 100%; text-align: left; border-bottom: 1px solid var(--line); }
+.offer--row .offer__media { width: 56px; height: 56px; font-size: 26px; position: relative; }
+.offer--row .offer__media--photo { padding: 4px; }
+.offer--row .offer__name { min-height: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-md); }
+.offer--row .offer__body { gap: 4px; }
+.offer--row .offer__meta { margin: 0; }
+.offer.offer--row .terms { display: flex; flex-wrap: wrap; gap: 4px; }
+.offer--row .offer__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-right: 44px; }
+.offer--row .offer__side b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; }
+.offer--row .offer__side s { font-size: var(--fs-xs); color: var(--muted); }
+.offer--row .offer__add { top: 50%; right: 0; transform: translateY(-50%); box-shadow: inset 0 0 0 1.4px var(--line); }
+.offer--row.is-in { box-shadow: none; }
+
+/* skeletons inside components: the same boxes as the real thing */
+.offer--card.is-loading .skel--price { margin: var(--s-3) var(--s-1) 0; }
+.offer--card.is-loading .skel--text { margin: var(--s-2) var(--s-1) 0; width: 85%; }
+.offer--card.is-loading .skel--line { margin: var(--s-2) var(--s-1) 0; width: 45%; }
+.offer--row.is-loading .skel--block { width: 56px; height: 56px; aspect-ratio: auto; }
+.offer--row.is-loading .skel--text { width: 72%; } .offer--row.is-loading .skel--line { width: 40%; }
+.offer--row.is-loading .skel--price { margin-right: 44px; }
+.skel--chip { flex: none; width: 92px; height: var(--h-sm); border-radius: var(--r-full); }
+.banner.is-loading { background: var(--soft); box-shadow: none; }
+.banner.is-loading .skel--round { width: 26px; height: 26px; flex: none; }
+.banner.is-loading .skel--text { flex: 1; max-width: 240px; }
+.tile .skel--price { width: 48px; height: 22px; } .tile .skel--line { width: 80%; margin-top: 6px; }

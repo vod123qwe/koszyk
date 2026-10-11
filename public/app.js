@@ -41,6 +41,7 @@ const I = {
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
   paper: '<path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2M8.5 8h4.5M8.5 11.5h4.5M8.5 15h3"/>',
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  rows: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
   grid: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
@@ -119,12 +120,15 @@ function remember(it) {
   h.lastAt = now; h.name = it.name; h.cat = it.cat; if (it.emoji) h.emoji = it.emoji; put('history', h, true); }
 
 // ---------- promotions (for what is on the list, and for what you usually buy) ----------
-let PR = {}, prKey = '', prT = 0;
+let PR = {}, prKey = '', prT = 0, prWait = '';   // (prWait: the shop whose deals are on their way; its rows show skeletons)
 function promosSoon() { clearTimeout(prT); prT = setTimeout(async () => {
-  const s = storeOf(store()); if (!s.ding.length) { PR = {}; return; }
+  const s = storeOf(store()); if (!s.ding.length) { PR = {}; if (prWait) { prWait = ''; render(); } return; }
   const open = openItems().map(i => i.name), usual = Object.values(C.history).sort((a, b) => b.count - a.count).slice(0, 12).map(h => h.name);
   const names = [...new Set([...open, ...usual])], key = s.id + '|' + names.join('|'); if (key === prKey) return; prKey = key;
-  try { const r = await api('/api/promos', { store: s.id, names }); if (r.store === store()) { PR = r.promos || {}; render(); if (!promoChecked) setTimeout(promoChanges, 700); else snapshotPromos(); } } catch { } }, 900); }
+  try { const r = await api('/api/promos', { store: s.id, names }); if (r.store === store()) { PR = r.promos || {}; if (prWait === s.id) prWait = ''; render(); if (!promoChecked) setTimeout(promoChanges, 700); else snapshotPromos(); } }
+  catch { if (prWait === s.id) { prWait = ''; render(); } } }, 900); }
+// (a new shop: its deals are fetched again, the rows wait under skeletons)
+function resetPromos(id) { PR = {}; prKey = ''; prWait = id || store(); }
 const bestOffer = name => (PR[name] || [])[0];
 function promoKinds(o) { const c = (o.cond || []).join(' | '), out = []; let m;
   if ((m = c.match(/(\d\+\d) gratis/))) out.push({ t: m[1] + ' gratis', k: 'multi' });
@@ -388,7 +392,7 @@ function rowEl(it) {
       ${it.note ? `<div class="meta"><span>${esc(it.note)}</span></div>` : ''}${p && (norm(p.title || p.name) !== norm(it.name) || promoKinds(p).some(k => k.k !== 'plain')) ? `<div class="dsub">${norm(p.title || p.name) === norm(it.name) ? '' : `<span class="dsub__name">${esc(p.title || p.name)}</span>`}${promoKinds(p).filter(k => k.k !== 'plain').map(k => `<span class="badge badge--${{ multi: 'warn', card: 'info' }[k.k]}">${esc(k.t)}</span>`).join('')}</div>` : ''}
       ${(() => { const n = subsHint(it).length; return n ? `<button type="button" class="subs" data-subs>${ic('swap', 2)}${n} ${plural(n, 'zamiennik', 'zamienniki', 'zamienników')} w promocji</button>` : ''; })()}
       ${!it.done && it.q ? `<div class="ask"><span>${esc(it.q)}</span>${(it.opts || []).map(o => `<button type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}</div>
-    ${p ? `<button class="dprice" type="button" data-promo aria-label="Promocja: ${esc(p.title || p.name)}, ${zl(p.price)}">${pct(p) ? `<span class="badge badge--promo">${pct(p)}</span>` : ''}<b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</button>` : ''}
+    ${p ? `<button class="dprice" type="button" data-promo aria-label="Promocja: ${esc(p.title || p.name)}, ${zl(p.price)}">${pct(p) ? `<span class="badge badge--promo">${pct(p)}</span>` : ''}<b>${zl(p.price)}</b>${p.oldPrice ? `<s>${zl(p.oldPrice)}</s>` : ''}</button>` : !it.done && prWait === store() ? '<span class="skel skel--price rskel" aria-hidden="true"></span>' : ''}
     <button class="chk" type="button" aria-pressed="${done}" aria-label="${done ? 'Przywróć' : 'Kupione'}: ${esc(it.name)}">${ic('check', 2.4)}</button></div></div>`;
   row.querySelector('.chk').onclick = () => tick(row, it);
   row.querySelector('.txt').onclick = e => { if (!e.target.closest('button')) editSheet(it); };
@@ -417,6 +421,7 @@ function buildList() {
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
   if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="banner"><span class="badge badge--promo">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
+  else if (prWait === id && open.length) wrap.insertAdjacentHTML('beforeend', '<div class="pband" aria-hidden="true"><div class="c"><div class="banner is-loading"><span class="skel skel--round"></span><span class="skel skel--text"></span></div></div></div>');
   if (!all.length) { browsing = true; renderEmpty(wrap); return; }
   for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
@@ -436,7 +441,7 @@ function buildList() {
   if (!browsing) { wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
     ${total && best ? `<button type="button" class="tile tile--line tile--save" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--line tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
-    <button type="button" class="tile tile--line" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<small>Wczytuję promocje…</small>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
+    <button type="button" class="tile tile--line" id="tLeaf"${L0 === null ? ' disabled' : ''}><span class="tile__label">Gazetka</span><span class="tile__title">${esc(storeOf(sid).name)}</span><span class="tile__meta">${L0 === undefined ? '<span class="skel skel--price"></span><span class="skel skel--line"></span>' : L0 === null ? '<small>Nie udało się pobrać</small>' : `${leafN}<small>${plural(leafN, 'promocja', 'promocje', 'promocji')}${leafTop ? ` · do −${leafTop}%` : ''}</small>`}</span><span class="tile__go">Przeglądaj${ic('chev', 2)}</span></button></div></div>`);
   const tc = $('#tCheap'); if (tc) tc.onclick = () => cs.length > 1 ? compareSheet() : dealsSheet(best.id);
   $('#tLeaf').onclick = openCover; }
   loadShopPromos();
@@ -486,7 +491,7 @@ const wireAdds = (roots, keep, toggle) => (roots instanceof Element ? [roots] : 
   if (shop && shop !== store()) setStore(shop);
   if (cur) { put('items', { ...cur, deleted: true }); vib(6); return; }
   const added = addItems([{ name, category: b.dataset.cat || undefined }]); vib(8);
-  if (keep) { b.classList.add('in'); b.querySelector('.pl').innerHTML = ic('check', 2.4); toast(`Dodano: ${name}`); } else if (added.length) snack(added, name); })));
+  if (keep) { b.classList.add('in', 'is-in'); const pl = b.querySelector('.pl, .offer__add'); if (pl) pl.innerHTML = ic('check', 2.4); toast(`Dodano: ${name}`); } else if (added.length) snack(added, name); })));
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
 // (the whole leaflet in a sheet, by aisle in this shop's order; adding keeps it open)
 const dm = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
@@ -494,70 +499,77 @@ const dm = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
 function leafDates(l) { if (!l || !l.length) return ''; const c = {}; l.forEach(o => c[o.until] = (c[o.until] || 0) + 1);
   const until = Object.keys(c).sort((a, b) => c[b] - c[a])[0], from = l.map(o => o.from).sort()[0];
   return from && from > new Date().toISOString().slice(0, 10) ? `od ${dm(from)} do ${dm(until)}` : `do ${dm(until)}`; }
-// (the leaflets of all three shops: pick one to open)
-function leafletsSheet() { loadShopPromos();
-  const row = st => { const l = EP[st.id], best = l && l.length ? Math.max(...l.map(o => Math.round(offPct(o) * 100))) : 0;
-    return `<button class="lrow" type="button" data-open="${st.id}" style="--sc:${st.color}" ${l && l.length ? '' : 'disabled'}><i></i><span class="ln"><b>${esc(st.name)}</b><small>${l === undefined ? 'Wczytuję…' : !l ? 'Nie udało się pobrać' : !l.length ? 'Brak promocji spożywczych' : `${l.length} ${plural(l.length, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`}</small></span>${best ? `<span class="badge badge--promo">do −${best}%</span>` : ''}${ic('chev', 2)}</button>`; };
-  const close = sheet(`<h3>Gazetki</h3><p class="sub">Promocje spożywcze i drogeryjne z gazetek sieci w tym tygodniu. Wybierz sklep, żeby przejrzeć całą listę po działach.</p>
-    <div class="lrows">${MY().map(row).join('')}</div>`, sh => sh.querySelectorAll('[data-open]').forEach(b => b.onclick = () => leafletSheet(b.dataset.open)));
-  if (MY().some(st => EP[st.id] === undefined)) setTimeout(() => { if ($('.sheet.show .lrows')) leafletsSheet(); }, 1500); }
-function leafletSheet(id) { const l = rankLeaf(EP[id] || []), order = orderFor(id), by = {};
-  for (const o of l) (by[o.cat] = by[o.cat] || []).push(o);
-  const cats = [...order.filter(c => by[c] && c !== 'alkohol'), ...(by.alkohol ? ['alkohol'] : [])];
-  sheet(`<div class="ltabs" role="tablist">${MY().map(st => `<button type="button" role="tab" data-tab="${st.id}" aria-selected="${st.id === id}" style="--sc:${st.color}"><i></i>${esc(st.name)}<small>${(EP[st.id] || []).length || ''}</small></button>`).join('')}</div>
-    <h3>Gazetka ${esc(storeOf(id).name)}</h3><p class="sub">${l.length} ${plural(l.length, 'produkt', 'produkty', 'produktów')} ${leafDates(l)}. Dotknij, żeby dopisać do listy.</p>
-    <div class="lcats">${cats.map(c => `<button type="button" class="chip chip--sm chip--tile" data-jump="${c}" style="--tile:var(--t-${c})">${esc(CAT_EMOJI[c] || '')} ${esc(CATS[c].name)} <small>${by[c].length}</small></button>`).join('')}</div>
-    <label class="lsearch">${ic('search', 2)}<input type="search" placeholder="Szukaj w gazetce…" autocomplete="off" aria-label="Szukaj w gazetce"></label>
-    <div class="leaf">${cats.map(c => `<section class="lg" data-cat="${c}"><div class="lh">${esc(CATS[c].name)}<span>${by[c].length}</span></div>${by[c].map(epRow).join('')}</section>`).join('')}<p class="wnone lnone" hidden>Nic takiego w tej gazetce.</p></div>`, sh => { wireAdds(sh, true);
-    sh.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (b.dataset.tab !== id) leafletSheet(b.dataset.tab); });
-    sh.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const g = sh.querySelector(`.lg[data-cat="${b.dataset.jump}"]`); if (g) sh.scrollTo({ top: g.offsetTop - 8, behavior: 'smooth' }); });
-    // (filter as you type; empty aisles fold away)
-    const inp = sh.querySelector('.lsearch input'); inp.oninput = () => { const q = norm(inp.value); let any = 0;
-      sh.querySelectorAll('.lg').forEach(g => { let n = 0; g.querySelectorAll('.ep').forEach(b => { const on = !q || norm(b.dataset.add).includes(q); b.hidden = !on; n += on; }); g.hidden = !n; any += n; });
-      sh.querySelector('.lnone').hidden = !!any; }; }); }
-const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => leafletSheet(b.dataset.all));
-// (under a list in progress: this shop's offers on grey, by aisle; the header and the aisle pills stick to the top,
-//  a pill takes you to its aisle, "Doczytaj więcej" brings the next ones)
-let shpShown = 14, shpStore = '';
-function shpGroups(id, open) { const ranked = rankLeaf(EP[id] || []).filter(o => !open.some(i => offerFits(o.name, i.name) || norm(i.name) === norm(o.name)));
-  const my = mine().slice(0, 30), mineFits = o => my.some(h => offerFits(o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat)), forMe = ranked.filter(mineFits).slice(0, 6), rest = ranked.filter(o => !forMe.includes(o)), by = {};
-  for (const o of rest) (by[o.cat] = by[o.cat] || []).push(o);
+// ---------- the leaflet: full screen, one shop at a time (tabs on top), aisles as the only filter, tiles or a list ----------
+// (tiles by default; the choice stays on this phone. Photos when the leaflet has them, else the aisle's tile with its icon)
+let coverOpen = false, cvStore = '', cvCat = 'all', cvQ = '', cvSearch = false, cvHeadKey = '', cvBodyKey = '';
+const cvView = () => { try { return localStorage.getItem('koszyk.leafView') === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } };
+const offerEm = o => o.emoji || emojiGuess(o.name) || CAT_EMOJI[o.cat] || '🛒';
+function offerCard(o, on, row) { const nm = o.title || o.name, badge = pct(o) ? `<span class="badge badge--promo">${pct(o)}</span>` : '';
+  const media = `<span class="offer__media${o.image ? ' offer__media--photo' : ''}" style="--tile:var(--t-${o.cat || 'dom'})" data-em="${esc(offerEm(o))}">${o.image ? `<img src="${esc(o.image)}" alt="" loading="lazy" decoding="async">` : esc(offerEm(o))}${row ? '' : badge}</span>`;
+  const add = `<span class="offer__add" aria-hidden="true">${on ? ic('check', 2.4) : ic('plus', 2.2)}</span>`, old = o.oldPrice ? `<s>${zl(o.oldPrice)}</s>` : '';
+  const attrs = `type="button" data-add="${esc(nm)}" data-cat="${esc(o.cat || '')}" aria-label="${esc(`${on ? 'Na liście' : 'Dodaj'}: ${nm}, ${zl(o.price)}`)}"`;
+  return row ? `<button class="offer offer--row${on ? ' is-in' : ''}" ${attrs}>${media}<span class="offer__body"><b class="offer__name">${esc(nm)}</b>${termsHtml(o)}</span><span class="offer__side">${badge}<b>${zl(o.price)}</b>${old}</span>${add}</button>`
+    : `<button class="offer offer--card${on ? ' is-in' : ''}" ${attrs}>${media}${add}<span class="offer__price"><b>${zl(o.price)}</b>${old}</span><b class="offer__name">${esc(nm)}</b>${termsHtml(o)}</button>`; }
+// (skeletons: the shape of what is coming)
+const SKEL_CARD = '<div class="offer offer--card is-loading"><span class="skel skel--block"></span><span class="skel skel--price"></span><span class="skel skel--text"></span><span class="skel skel--line"></span></div>';
+const SKEL_ROW = '<div class="offer offer--row is-loading"><span class="skel skel--block"></span><span class="offer__body"><span class="skel skel--text"></span><span class="skel skel--line"></span></span><span class="skel skel--price"></span></div>';
+const skelCards = n => `<div class="offers offers--grid" aria-hidden="true">${SKEL_CARD.repeat(n)}</div>`;
+const skelRows = n => `<div class="offers offers--rows" aria-hidden="true">${SKEL_ROW.repeat(n)}</div>`;
+// (the aisles of a leaflet: what you usually buy first, then the shop's order, alcohol last)
+function cvGroups(id) { const ranked = rankLeaf(EP[id] || []), my = mine().slice(0, 30);
+  // ("for you" only when every word of what you buy is there: "Płyn do naczyń" is not "Płyn do płukania")
+  const every = (on, name) => norm(name).split(' ').filter(w => w.length >= 3).every(w => (' ' + norm(on)).includes(' ' + stemOf(w)));
+  const forMe = ranked.filter(o => my.some(h => offerFits(o.name, h.name) && every(o.title || o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat))).slice(0, 8), by = {};
+  for (const o of ranked) if (!forMe.includes(o)) (by[o.cat] = by[o.cat] || []).push(o);
   return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...[...orderFor(id).filter(c => by[c] && c !== 'alkohol'), ...(by.alkohol ? ['alkohol'] : [])].map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
-let coverOpen = false, coverRaf = 0;
-function openCover() { const el = $('.cover'); if (!el) return; coverOpen = true; el.hidden = false; renderCover(true); requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
+function openCover(id) { const el = $('.cover'); if (!el) return;
+  cvStore = typeof id === 'string' && MY().some(s => s.id === id) ? id : store(); cvCat = 'all'; cvQ = ''; cvSearch = false; cvHeadKey = cvBodyKey = '';
+  coverOpen = true; el.hidden = false; loadShopPromos(); renderCover(true); requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
 function closeCover() { const el = $('.cover'); if (!el || !coverOpen) return; coverOpen = false; el.classList.remove('show'); document.documentElement.classList.remove('locked'); setTimeout(() => { if (!coverOpen) el.hidden = true; }, 420); }
-function renderCover(top) { const body = $('.cv-body'); if (!body || !coverOpen) return; const y = top ? 0 : body.scrollTop;
-  $('.cv-title').textContent = 'Gazetka ' + storeOf(store()).name; body.innerHTML = ''; renderShopPromos(body, openItems()); body.scrollTop = y; shpSpy(); }
-function renderShopPromos(wrap, open) { const id = store(), l = EP[id]; loadShopPromos();
-  if (l && !l.length) return;
-  if (shpStore !== id) { shpStore = id; shpShown = 14; }
-  const groups = l ? shpGroups(id, open) : [], total = groups.reduce((n, g) => n + g.items.length, 0);
-  let left = shpShown; const shown = groups.map(g => { const take = Math.max(0, Math.min(g.items.length, left)); left -= take; return { ...g, show: g.items.slice(0, take) }; }).filter(g => g.show.length);
-  wrap.insertAdjacentHTML('beforeend', `<section class="shp" id="shp"><div class="shs"><div class="c shh"><span class="badge badge--promo">%</span>Promocje w ${IN[id] || storeOf(id).name}<span class="n">${l ? total : ''}</span>${l ? `<button type="button" class="shall" data-all="${id}">Gazetka ${ic('chev', 2)}</button>` : ''}</div>
-      ${groups.length ? `<div class="shpills" role="tablist">${groups.map(g => `<button type="button" role="tab" class="chip chip--sm" data-go="${g.id}" style="--tile:var(--t-${g.id === 'mine' ? 'warzywa' : g.id})">${esc(g.emoji || '')} ${esc(g.title)} <small>${g.items.length}</small></button>`).join('')}</div>` : ''}</div>
-    ${l === undefined ? '<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>' : l === null ? '<div class="epw">Nie udało się pobrać promocji.</div>'
-      : shown.map(g => `<div class="shg" data-g="${g.id}"><div class="c shgh">${esc(g.title)}<span>${g.items.length}</span></div>${g.show.map(epRow).join('')}</div>`).join('')
-        + (shpShown < total ? `<button type="button" class="btn btn--secondary btn--lg btn--block shmore">Doczytaj więcej <b>${Math.min(12, total - shpShown)}</b><small>z ${total - shpShown}</small></button>` : '')}
-    <p class="note">Najpierw to, co zwykle kupujesz, potem działy w kolejności sklepu. Dotknij, żeby dopisać do listy.</p></section>`);
-  const sec = wrap.querySelector('.shp'); wireAdds(sec, true); wireAll(sec);
-  const more = sec.querySelector('.shmore'); if (more) more.onclick = () => { shpShown += 12; render(); };
-  sec.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go;
-    // (an aisle not loaded yet comes in first, then we go there)
-    if (!sec.querySelector(`.shg[data-g="${g}"]`)) { let n = 0; for (const x of groups) { if (x.id === g) { shpShown = Math.max(shpShown, n + x.items.length + 4); break; } n += x.items.length; } render(); }
-    const t = $(`#shp .shg[data-g="${g}"]`), bar = $('#shp .shs'), sc = $('.cv-body'); if (t && sc) { const y = t.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - (bar ? bar.offsetHeight : 0) + 1; sc.scrollTo({ top: y, behavior: Math.abs(y - sc.scrollTop) > 2500 ? 'auto' : 'smooth' }); } });   // (a long way: jump, a short one: glide)
-  shpSpy(); }
-// (the pill of the aisle you are looking at lights up)
-let shpRaf = 0;
-function shpSpy() { const sec = $('#shp'); if (!sec) return; const bar = sec.querySelector('.shs'), top = bar ? bar.getBoundingClientRect().bottom : 0;
-  let cur = null; sec.querySelectorAll('.shg').forEach(g => { if (g.getBoundingClientRect().top <= top + 12) cur = g.dataset.g; });
-  sec.classList.toggle('stuck', !!bar && bar.getBoundingClientRect().top <= 0.5 && sec.getBoundingClientRect().top < 0);
-  sec.querySelectorAll('[data-go]').forEach(b => { const on = b.dataset.go === cur; if (on !== b.classList.contains('chip--on')) { b.classList.toggle('chip--on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } }); }
+function renderCover(top) { const head = $('.cv-head'), body = $('.cv-body'); if (!body || !coverOpen) return;
+  if (!MY().some(s => s.id === cvStore)) cvStore = store();
+  const id = cvStore, l = EP[id], view = cvView(), groups = l ? cvGroups(id) : [], total = l ? new Set(l.map(o => norm(o.name))).size : 0;
+  if (cvCat !== 'all' && !groups.some(g => g.id === cvCat)) cvCat = 'all';
+  // (the top: shops, search, aisles; rebuilt only when they change, so typing keeps its field)
+  $('.cv-sub').innerHTML = l === undefined ? '<span class="skel skel--line"></span>' : l && l.length ? esc(`${total} ${plural(total, 'promocja', 'promocje', 'promocji')} · ${leafDates(l)}`) : '';
+  $('#cvFind').setAttribute('aria-pressed', cvSearch);
+  $('#cvView').innerHTML = [['grid', 'grid', 'Kafle'], ['list', 'rows', 'Lista']].map(([v, i, t]) => `<button type="button" data-view="${v}" aria-pressed="${v === view}" aria-label="${t}">${ic(i, 1.9)}</button>`).join('');
+  const hk = [id, cvCat, cvSearch, l === undefined ? 'u' : l === null ? 'n' : groups.map(g => g.id + g.items.length).join(), MY().map(s => s.id + (EP[s.id] ? EP[s.id].length : '-')).join()].join('§');
+  if (hk !== cvHeadKey) { cvHeadKey = hk;
+    head.innerHTML = `${MY().length > 1 ? `<div class="seg seg--block" role="tablist" aria-label="Sklep">${MY().map(s => `<button type="button" role="tab" data-shop="${s.id}" aria-selected="${s.id === id}" style="--sc:${s.color}"><i class="dot"></i><span>${esc(s.name)}</span></button>`).join('')}</div>` : ''}
+      ${cvSearch ? `<label class="cv-find">${ic('search', 2)}<input class="cv-q" type="search" placeholder="Szukaj w gazetce" autocomplete="off" enterkeyhint="search" aria-label="Szukaj w gazetce" value="${esc(cvQ)}"></label>` : ''}
+      <div class="cv-chips" role="tablist" aria-label="Kategorie">${l === undefined ? '<span class="skel skel--chip"></span>'.repeat(5)
+        : groups.length ? [{ id: 'all', title: 'Wszystko', items: { length: total } }, ...groups].map(g => `<button type="button" role="tab" class="chip chip--sm${g.id === cvCat ? ' chip--on' : ''}" data-cat="${g.id}" aria-selected="${g.id === cvCat}">${g.emoji ? esc(g.emoji) + ' ' : ''}${esc(g.title)} <small>${g.items.length}</small></button>`).join('') : ''}</div>`;
+    head.querySelectorAll('[data-shop]').forEach(b => b.onclick = () => { if (b.dataset.shop === cvStore) return; cvStore = b.dataset.shop; cvCat = 'all'; vib(6); loadShopPromos(); renderCover(true); });
+    head.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { cvCat = b.dataset.cat; vib(4); renderCover(true); });
+    const q = head.querySelector('.cv-q'); if (q) { q.oninput = () => { cvQ = q.value; renderCover(true); }; if (!cvQ) q.focus(); }
+    const on = head.querySelector('.chip--on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest' }); }
+  // (the offers: by aisle when everything is shown, one aisle when picked; searching narrows both)
+  const onList = new Set(Object.values(C.items).filter(i => !i.deleted).map(i => norm(i.name))), qn = norm(cvQ).trim();
+  const bk = [id, cvCat, view, qn, l === undefined ? 'u' : l === null ? 'n' : l.length + ':' + epAt, [...onList].sort().join('|')].join('§');
+  if (bk === cvBodyKey && !top) return; cvBodyKey = bk; const y = top ? 0 : body.scrollTop;
+  const fits = o => !qn || qn.split(/\s+/).every(w => norm(o.title || o.name).includes(w)), card = o => offerCard(o, onList.has(norm(o.title || o.name)), view === 'list');
+  const box = items => `<div class="offers ${view === 'list' ? 'offers--rows' : 'offers--grid'}">${items.map(card).join('')}</div>`;
+  let html;
+  if (l === undefined) html = view === 'list' ? skelRows(8) : skelCards(6);
+  else if (l === null) html = '<div class="cv-empty"><p>Nie udało się pobrać gazetki.</p><button class="btn btn--secondary" type="button" id="cvRetry">Spróbuj jeszcze raz</button></div>';
+  else if (!l.length) html = '<div class="cv-empty"><p>W tym tygodniu brak promocji spożywczych.</p></div>';
+  else { const shown = (cvCat === 'all' ? groups : groups.filter(g => g.id === cvCat)).map(g => ({ ...g, items: g.items.filter(fits) })).filter(g => g.items.length);
+    html = !shown.length ? '<div class="cv-empty"><p>Nic takiego w tej gazetce.</p></div>'
+      : cvCat === 'all' ? shown.map(g => `<section class="cvg"><h3 class="cvh">${esc(g.title)}<span>${g.items.length}</span></h3>${box(g.items)}</section>`).join('') : box(shown[0].items);
+    html += '<p class="cv-note">Ceny z gazetek sieci. Dotknij, żeby dopisać do listy.</p>'; }
+  body.innerHTML = `<div class="cv-in">${html}</div>`; body.scrollTop = y;
+  wireAdds(body, true, true);
+  const rt = body.querySelector('#cvRetry'); if (rt) rt.onclick = () => { EP[id] = undefined; epAt = 0; loadShopPromos(); renderCover(true); }; }
+// (a photo that will not load gives way to the aisle's icon)
+function coverImgFallback(e) { const img = e.target; if (img.tagName !== 'IMG') return; const m = img.closest('.offer__media'); if (!m) return; m.classList.remove('offer__media--photo'); img.replaceWith(document.createTextNode(m.dataset.em || '🛒')); }
+const wireAll = root => root.querySelectorAll('[data-all]').forEach(b => b.onclick = () => openCover(b.dataset.all));
 
 function renderEmpty(wrap) {
   const onList = new Set(Object.values(C.items).filter(i => !i.deleted).map(i => norm(i.name))), has = n => onList.has(norm(n));
   const picks = picksForEmpty().filter(p => !has(p.name)), cur = store(), stores = [MY().find(s => s.id === cur), ...MY().filter(s => s.id !== cur)].filter(Boolean);
   const promoBlock = s => { const l = EP[s.id];
-    const body = l === undefined ? `<div class="epw"><div class="orbs small"><i></i><i></i><i></i></div>Szukam w gazetce…</div>`
+    const body = l === undefined ? `<div class="epskel">${skelRows(3)}</div>`
       : !l || !l.length ? `<div class="epw">${l === null ? 'Nie udało się pobrać promocji.' : 'W tym tygodniu brak promocji spożywczych.'}</div>`
       // (alcohol never fills the preview; it waits at the end of the whole leaflet)
       : !l.some(o => o.cat !== 'alkohol') ? `<div class="epw">W tym tygodniu brak promocji spożywczych.</div>${allBtn(s.id, l.length)}`
@@ -614,7 +626,7 @@ function dealsSheet(id) { const D = CMP[id]; if (!D || !D.n) return; const total
     <div class="offers">${D.hits.map(({ item, o }) => `<div class="dl"><div class="dl__for">Za <b>${esc(item)}</b> z Twojej listy · oszczędzasz ${zl(o.oldPrice - o.price)}${o.multi > 1 ? ' na sztuce' : ''} · do ${dm(o.until)}</div>
       ${offerHtml(o, { flat: true })}${o.multi > 1 ? `<p class="dlw">Cena promocyjna przy zakupie ${o.multi} szt. Za jedną sztukę zapłacisz zwykłą cenę.</p>` : ''}</div>`).join('')}</div>
     ${id !== store() ? `<div class="pcb"><button type="button" class="btn btn--primary btn--lg btn--block ok" data-go>Ułóż listę pod ${esc(sh0.thru || sh0.name)}</button></div>` : ''}`, sh => {
-    const g = sh.querySelector('[data-go]'); if (g) g.onclick = () => { put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); close(); vib(6); }; }); }
+    const g = sh.querySelector('[data-go]'); if (g) g.onclick = () => { resetPromos(id); put('settings', { id: 'store', value: id }); promosSoon(); close(); vib(6); }; }); }
 function offersSheet(it) { const s = storeOf(store()), offs = PR[it.name] || [];
   sheet(`<h3>${esc(it.name)} taniej</h3><p class="sub">Promocje w ${esc(IN[s.id] || s.name)}, które pasują do tego produktu.</p>
     <div class="offers">${offs.map(o => offerHtml(o, { meta: `${esc(s.name)} · ${dm(o.from)} – ${dm(o.until)}` })).join('')}</div>
@@ -711,7 +723,7 @@ let storesKey = '';
 // (the shop: one switcher, ‹ Biedronka ›; swipe or the arrows step through your shops, a tap on the name opens them all)
 let storeSw = null;
 const cheapest = () => { const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n && CMP[x.id].save > 0).sort((a, b) => CMP[b.id].save - CMP[a.id].save); return cs[0] ? cs[0].id : null; };
-function setStore(id) { if (id === store()) return; put('settings', { id: 'store', value: id }); PR = {}; prKey = ''; promosSoon(); vib(6); }
+function setStore(id) { if (id === store()) return; resetPromos(id); put('settings', { id: 'store', value: id }); promosSoon(); vib(6); }
 function renderStores() { const cur = storeOf(store()), best = cheapest(), el = $('#swName'); if (!el) return;
   const key = myIds().join(',') + '|' + cur.id + '|' + best; if (key === storesKey) return; storesKey = key;
   el.style.setProperty('--sc', cur.color); el.innerHTML = `<i class="dot"></i>${esc(cur.name)}${best === cur.id ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''}`;
@@ -729,7 +741,7 @@ function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(
       const now = [...sh.querySelectorAll('[data-id]:checked')].map(x => x.dataset.id);
       if (!now.length) { cb.checked = true; toast('Zostaw przynajmniej jeden sklep'); return; }
       const keep = myIds().filter(id => now.includes(id)), added = now.filter(id => !keep.includes(id));
-      put('settings', { id: 'myStores', value: [...keep, ...added] }, true); PR = {}; prKey = ''; storesKey = ''; render(); promosSoon(); compareSoon(); loadShopPromos(); vib(6); })); }
+      put('settings', { id: 'myStores', value: [...keep, ...added] }, true); resetPromos(); storesKey = ''; render(); promosSoon(); compareSoon(); loadShopPromos(); vib(6); })); }
 let mounted = false;   // (the cover's own scroll drives the aisle pills)
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
@@ -742,14 +754,16 @@ function mount() {
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
       <button class="ibtn ibtn--primary ibtn--xl mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
-    <div class="cover" role="dialog" aria-modal="true" aria-label="Gazetka" hidden><div class="cv-top"><button class="ibtn ibtn--secondary" type="button" id="cvClose" aria-label="Zamknij">${ic('x', 2)}</button><span class="cv-title">Gazetka</span><button class="btn btn--primary btn--sm" type="button" id="cvDone">Wróć do listy</button></div><div class="cv-body"></div></div><div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+    <div class="cover" role="dialog" aria-modal="true" aria-label="Gazetka" hidden><div class="cv-top"><div class="cv-bar"><button class="ibtn ibtn--secondary" type="button" id="cvClose" aria-label="Zamknij">${ic('x', 2)}</button><div class="cv-t"><b>Gazetka</b><small class="cv-sub"></small></div><button class="ibtn ibtn--secondary" type="button" id="cvFind" aria-label="Szukaj" aria-pressed="false">${ic('search', 2)}</button><div class="seg seg--icons" id="cvView" role="group" aria-label="Widok"></div></div><div class="cv-head"></div></div><div class="cv-body"></div></div><div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
   addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
-  $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = leafletsSheet;
+  $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = openCover;
   $('#f').onclick = () => openAdder();
   const aq = $('#adQ'); aq.oninput = () => { if (!aq.value.trim()) editFrom = null; adderRender(); };
   $('#adF').onsubmit = e => { e.preventDefault(); submitText(aq.value); };
-  $('.ad-done').onclick = closeAdder; $('#cvClose').onclick = closeCover; $('#cvDone').onclick = closeCover;
-  $('.cv-body').addEventListener('scroll', () => { cancelAnimationFrame(coverRaf); coverRaf = requestAnimationFrame(shpSpy); }, { passive: true }); $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
+  $('.ad-done').onclick = closeAdder; $('#cvClose').onclick = closeCover;
+  $('#cvFind').onclick = () => { cvSearch = !cvSearch; if (!cvSearch) cvQ = ''; renderCover(true); };
+  $('#cvView').onclick = e => { const b = e.target.closest('[data-view]'); if (!b) return; try { localStorage.setItem('koszyk.leafView', b.dataset.view); } catch { } vib(4); renderCover(true); };
+  $('.cv-body').addEventListener('error', coverImgFallback, true); $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
   $('#adList').addEventListener('pointerdown', e => { if (e.target.closest('button')) e.preventDefault(); });   // (keep the keyboard up while tapping suggestions)
   addEventListener('keydown', e => { if (e.key === 'Escape' && adderOpen) closeAdder(); else if (e.key === 'Escape' && coverOpen && !$('.sheet.show')) closeCover(); });
   const mic = $('#mic'); mic.addEventListener('pointerdown', e => { e.preventDefault(); startVoice(); }); mic.addEventListener('contextmenu', e => e.preventDefault());
@@ -770,6 +784,6 @@ function render() {
   $('#lead').textContent = !all.length ? 'Przytrzymaj zielony przycisk i mów. Ułożymy listę tak, jak idziesz przez sklep.' : n ? `Ułożone po kolei, jak idziesz przez ${THRU[s.id] || s.name}.` : 'Lista na dziś odhaczona.';
   renderList(); renderChips(); if (coverOpen) renderCover(); }
 
-render(); if (token) { sync(); promosSoon(); compareSoon(); }
+if (token) prWait = store(); render(); if (token) { sync(); promosSoon(); compareSoon(); }
 if ('serviceWorker' in navigator && !/^(localhost|127\.)/.test(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => { });
 window.KOSZYK = { get C() { return C; }, addItems, addText, sync, get PR() { return PR; } };
