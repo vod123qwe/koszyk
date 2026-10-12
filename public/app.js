@@ -38,6 +38,8 @@ const I = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/>',
   back: '<path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M3 3l18 18M10.6 6.1A9.6 9.6 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.7 3.4M6.6 7.6C4 9.3 2.5 12 2.5 12S6 18 12 18c1.6 0 3-.4 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', out: '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>', bag: '<path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/>',
 };
 const ic = (n, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] || I.box}</svg>`;
@@ -214,7 +216,8 @@ const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== '
 function tick(row, it) {
   if (it.done) { put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
   if (row.classList.contains('on')) return; row.classList.add('on'); ticking.add(it.id); vib(12);
-  setTimeout(() => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); }, 560); }
+  setTimeout(() => { const fin = () => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); };
+    if (!hideDone) return fin(); row.style.height = row.offsetHeight + 'px'; void row.offsetHeight; row.classList.add('fold'); setTimeout(fin, 300); }, 560); }
 // (each line a touch its own: nearly straight, the slightest rise and dip, seeded by the item)
 function pencil(id) { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const r = k => ((h >>> k) % 100) / 100;
   const y0 = 4.6 + r(1) * .9, y1 = 4 + r(5) * 1.4, y2 = 4.2 + r(9) * 1.2, y3 = 4.4 + r(13) * 1;
@@ -251,13 +254,18 @@ function rowEl(it) {
   const pb = row.querySelector('[data-promo]'); if (pb) pb.onclick = () => offersSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
+// (bought items can be hidden, so only what is still missing stays on the list; remembered per phone)
+let hideDone = false; try { hideDone = localStorage.getItem('koszyk.hideDone') === '1'; } catch { }
 function renderList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
   if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><span class="pill">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div>`);
   if (!all.length) { renderEmpty(wrap); return; }
-  for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
+  if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="hidebar"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="hideDone" aria-pressed="${hideDone}">${ic(hideDone ? 'eye' : 'eyeOff', 2)}${hideDone ? 'Pokaż kupione' : 'Ukryj kupione'}</button></div></div>`);
+    $('#hideDone').onclick = () => { hideDone = !hideDone; try { localStorage.setItem('koszyk.hideDone', hideDone ? '1' : '0'); } catch { } vib(6); render(); }; }
+  if (hideDone && done.length && !open.length) wrap.insertAdjacentHTML('beforeend', `<p class="alldone"><span class="c">Wszystko z listy jest już w koszyku.</span></p>`);
+  for (const cat of order) { const its = all.filter(i => i.cat === cat && !(hideDone && i.done)).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
     sec.innerHTML = `<div class="h"><div class="c">${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }

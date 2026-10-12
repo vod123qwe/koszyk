@@ -109,6 +109,15 @@ svg { display: block; }
 @keyframes hops { 0%, 100% { transform: translateY(0) scale(1.06, .94); } 40% { transform: translateY(-9px); } 80% { transform: translateY(0) scale(1.08, .92); } }
 .sum .c { display: flex; align-items: center; justify-content: space-between; height: 56px; font-size: 13.5px; color: var(--muted); }
 .sum button { text-decoration: underline; text-underline-offset: 3px; }
+.hidebar { border-bottom: 1px solid var(--line); }
+.hidebar .c { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hidebar button { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--soft); color: var(--ink); font-size: 13.5px; font-weight: 600; transition: background .2s, color .2s; }
+.hidebar button svg { width: 17px; height: 17px; }
+.hidebar button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.hidebar button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.alldone .c { display: block; padding-block: 28px; font-size: 15px; color: var(--muted); }
+.alldone { margin: 0; border-bottom: 1px solid var(--line); }
+.row.fold { height: 0 !important; opacity: 0; transition: height .3s var(--ease), opacity .2s; }
 
 /* the dock */
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--bg); border-top: 1px solid var(--line); padding-bottom: var(--safeB); }
