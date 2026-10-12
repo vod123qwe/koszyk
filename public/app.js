@@ -8,6 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
 const norm = s => String(s || '').toLowerCase().replace(/[^a-ząćęłńóśźż0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+const foldPL = s => String(s).toLowerCase().replace(/[ąćęłńóśźż]/g, c => 'acelnoszz'['ąćęłńóśźż'.indexOf(c)]);   // (no Polish marks: "maslo" = "masło")
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch { } };
 const zl = n => n.toFixed(2).replace('.', ',') + ' zł';
 
@@ -352,10 +353,12 @@ let toastT = 0; function toast(t) { $('.snack')?.classList.remove('show'); const
 // ---------- ticking off: the circle fills and a pencil line is drawn through the name; the item stays where it is ----------
 const CAT_EMOJI = { warzywa: '🥦', pieczywo: '🥖', nabial: '🥛', mieso: '🥩', wedliny: '🧀', mrozonki: '🧊', suche: '🍝', konserwy: '🥫', przyprawy: '🧂', sniadanie: '🍪', kawa: '☕', napoje: '🥤', alkohol: '🍷', chemia: '🧽', higiena: '🧴', dziecko: '🍼', zwierzeta: '🐾', dom: '🏠' };
 // ---------- emoji: from the AI or the catalog's stems; when nothing fits, the aisle's own (except "other") ----------
-function emojiGuess(name) { if ((CAT.nonfood || []).some(w => (String(name || '').toLowerCase() + ' ').startsWith(w))) return null; const n = String(name || '').toLowerCase(), words = n.split(/[\s,-]+/).filter(Boolean), list = CAT.emoji || [];
-  for (const [k, e] of list) if (k.includes(' ') ? (n + ' ').includes(k) : (words[0] || '').startsWith(k)) return e;
-  for (const [k, e] of list) if (!k.includes(' ') && words.some(w => w.startsWith(k))) return e;
-  return null; }
+// (the same as the server's emojiFor: without Polish marks; things that are not food take theirs from their own list: flowers 💐, candles 🕯️)
+const EMO_ = (CAT.emoji || []).map(([k, e]) => [foldPL(k), e]), EMO_DOM_ = (CAT.emojiDom || []).map(([k, e]) => [foldPL(k), e]);
+const emojiIn_ = (n, words, list) => { for (const [k, e] of list) if (k.includes(' ') ? (n + ' ').includes(k) : (words[0] || '').startsWith(k)) return e;
+  for (const [k, e] of list) if (!k.includes(' ') && words.some(w => w.startsWith(k))) return e; return null; };
+function emojiGuess(name) { const n = foldPL(name || ''), words = n.split(/[\s,-]+/).filter(Boolean), nonFood = (CAT.nonfood || []).some(w => (String(name || '').toLowerCase() + ' ').startsWith(w));
+  return nonFood ? emojiIn_(n, words, EMO_DOM_) : emojiIn_(n, words, EMO_) || emojiIn_(n, words, EMO_DOM_); }
 const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== 'dom' && looksLikeProduct(it) ? CAT_EMOJI[it.cat] : null);
 function tick(row, it) {
   if (it.done) { put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
@@ -454,7 +457,6 @@ const stemOf = w => w.slice(0, Math.max(4, Math.min(6, w.length - 1)));
 // (does this offer fit that product? The same rules as the server (lib/promos.js): any form of the product's word, without Polish
 //  marks too; not a word made from it ("pomidorowy"), not an ingredient ("z mozzarellą", "w czekoladzie"), not said later in a name
 //  about something else ("Ser salami", "Parówki z szynki"), not a lookalike ("cukierki" for "cukier"); "sok" is not "Sokołów")
-const foldPL = s => String(s).toLowerCase().replace(/[ąćęłńóśźż]/g, c => 'acelnoszz'['ąćęłńóśźż'.indexOf(c)]);
 const ADJ_END = /(owy|owa|owe|owym|owej|owych|owego|ny|na|ne|nym|nej|nych|nego|ski|ska|skie|skim|cki|cka|ckie)$/, INSTR = /(ą|em|ami|mi)$/;
 const LEAD_ = new Set('polski polska polskie swiezy swieza swieze wszystkie wybrane mlode mlody mloda mrozone mrozony mrozona wloskie wloski wloska dziki dzika dzikie bio eko nowy nowa nowe wiejski wiejska wiejskie puszysty puszyste premium protein proteinowy miks mix zestaw lub i oraz'.split(' '));
 const CUT_ = /^(filet|piers|cwiart|mies|udk|uda|udo|nog|podud|skrzyd|poledwic|tusz|porcj|kostk|stek|kawal|plat|mostek|golonk|gulasz|schab|karkow|lopatk|zeberk)/;
@@ -680,7 +682,8 @@ function editSheet(it0) { const it = C.items[it0.id] || it0; let unit = it.unit 
     sh.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const st = stepOf(), v = Math.round(((num() || 0) + st * +b.dataset.d) * 100) / 100; q.value = v > 0 ? String(v).replace('.', ',') : ''; vib(5); });
     f.onsubmit = e => { e.preventDefault(); const cur = C.items[it.id] || it, name = f.n.value.trim().replace(/^./, c => c.toUpperCase()); if (!name) { f.n.focus(); return; }
       const qty = num(), renamed = norm(name) !== norm(cur.name);
-      put('items', { ...cur, name, qty, unit: qty == null ? null : unit, cat, ...(renamed ? { emoji: null, q: null, opts: [] } : {}) }); vib(8); close();
+      // (an aisle picked by hand stays: the server's tidy-up of unknown products never moves it)
+      put('items', { ...cur, name, qty, unit: qty == null ? null : unit, cat, ...(cat !== cur.cat ? { catBy: 'user' } : {}), ...(renamed ? { emoji: null, q: null, opts: [] } : {}) }); vib(8); close();
       if (renamed) { promosSoon(); compareSoon(); } };
     sh.querySelector('[data-del]').onclick = () => { const cur = C.items[it.id] || it; put('items', { ...cur, deleted: true }); vib(10); close(); toast('Usunięto z listy'); };
   }); }
