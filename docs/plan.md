@@ -44,3 +44,10 @@ Env: `KOSZYK_PIN` (4 cyfry), `ANTHROPIC_API_KEY` (AI), `GIST_ID` + `GITHUB_TOKEN
 - Render (Blueprint) i test na prawdziwych telefonach (Android Chrome, iPhone Safari).
 - Klucz `ANTHROPIC_API_KEY` (opcjonalnie), gdy parser lokalny okaże się za słaby.
 - V2: skład dań z Pot jako podpowiedzi, „zwykłe zakupy” jednym kliknięciem, kilka list.
+
+### Na później (zgłoszone 17.10.2026)
+
+- **Realne ceny promocji.** Promocja z warunkiem (przy zakupie N szt., tylko z aplikacją lub kartą, limit) nie może się liczyć jak zwykła obniżka w „Najtaniej dziś”, porównaniu sklepów i liczniku w nagłówku. Pomysł: pod produktem pytanie, np. „−50% przy 3 szt. Kupisz 3?”; „Tak” ustawia ilość i dopiero wtedy wlicza promocję. Aplikacje sklepów (Lidl Plus, Moja Biedronka): jedno pytanie na sieć, czy jej używasz. Cel: decyzja Lidl, Biedronka czy Kaufland na kwotach, które faktycznie zapłacisz.
+- **Porządki w menu**: linki są pomieszane.
+- **Historia zakupów**: do ustalenia, co ma pokazywać.
+- **Blokada PIN-u** (czeka na decyzję): limit 5 prób liczy się po pierwszym adresie z nagłówka `X-Forwarded-For`, który odwiedzający może sam podać, więc przy 4 cyfrach da się próbować dalej. Poprawka: blokada po serii błędnych prób dla wszystkich, opcjonalnie dłuższy PIN.
