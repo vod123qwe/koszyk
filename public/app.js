@@ -365,9 +365,7 @@ const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== '
 function tick(row, it) {
   if (it.done) { flying = it.id; put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
   if (row.classList.contains('on')) return; row.classList.add('on'); ticking.add(it.id); vib(12);
-  setTimeout(() => { const fin = () => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); };
-    if (!hideDone) { flying = it.id; return fin(); }
-    row.style.height = row.offsetHeight + 'px'; void row.offsetHeight; row.classList.add('fold'); setTimeout(fin, 300); }, 560); }
+  setTimeout(() => { ticking.delete(it.id); remember(it); learn(it.cat); flying = it.id; put('items', { ...it, done: true, doneAt: Date.now() }); }, 560); }
 // (each line a touch its own: nearly straight, the slightest rise and dip, seeded by the item)
 function pencil(id) { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const r = k => ((h >>> k) % 100) / 100;
   const y0 = 4.6 + r(1) * .9, y1 = 4 + r(5) * 1.4, y2 = 4.2 + r(9) * 1.2, y3 = 4.4 + r(13) * 1;
@@ -409,8 +407,6 @@ function rowEl(it) {
   const sb = row.querySelector('[data-subs]'); if (sb) sb.onclick = () => subsSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
-// (bought items can be hidden, so only what is still missing stays on the list; remembered per phone)
-let hideDone = false; try { hideDone = localStorage.getItem('koszyk.hideDone') === '1'; } catch { }
 // ---------- moving lines: a bought item flies down to "W koszyku", the rest slide up into its place (FLIP across the rebuild) ----------
 // (positions in page coordinates, so keeping the scroll still between the two measurements does not count as movement)
 let flying = null; const calm = matchMedia('(prefers-reduced-motion: reduce)');
@@ -443,20 +439,16 @@ function renderList() { const wrap = $('#list'), y = scrollY, was = flipSnap(wra
 let browsing = false, exShown = false;   // (set when the list was shown empty; lasts until the app is opened again)
 function buildList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
-  const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
   wrap.innerHTML = '';
-  if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="banner"><span class="badge badge--promo">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
-  else if (prWait === id && open.length) wrap.insertAdjacentHTML('beforeend', '<div class="pband" aria-hidden="true"><div class="c"><div class="banner is-loading"><span class="skel skel--round"></span><span class="skel skel--text"></span></div></div></div>');
   if (!all.length) { browsing = true; renderEmpty(wrap); return; }
-  if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="hidebar" data-flip="bar"><div class="c"><button type="button" class="btn btn--soft btn--sm" id="hideDone" aria-pressed="${hideDone}">${ic(hideDone ? 'eye' : 'eyeOff', 2)}${hideDone ? 'Pokaż kupione' : 'Ukryj kupione'}</button></div></div>`);
-    $('#hideDone').onclick = () => { hideDone = !hideDone; try { localStorage.setItem('koszyk.hideDone', hideDone ? '1' : '0'); } catch { } vib(6); render(); }; }
-  if (hideDone && done.length && !open.length) wrap.insertAdjacentHTML('beforeend', '<p class="alldone"><span class="c">Wszystko z listy jest już w koszyku.</span></p>');
+  // (what you often buy, on top: one tap puts it on the list; it stands in for "Może cię zainteresować" while browsing too)
+  wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq);
   // (the aisles hold only what is still missing; bought items go to the very bottom, in the order they went into the cart)
   for (const cat of order) { const its = open.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat];
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
     sec.innerHTML = `<div class="h" data-flip="h:${cat}"><div class="c"><span class="hic" aria-hidden="true">${CAT_EMOJI[cat] || ''}</span>${esc(c.name)}<span class="n">${its.length}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
-  if (done.length && !hideDone) { const sec = document.createElement('section'); sec.className = 'sec bought';
+  if (done.length) { const sec = document.createElement('section'); sec.className = 'sec bought';
     sec.innerHTML = `<div class="h" data-flip="h:bought"><div class="c"><span class="hic" aria-hidden="true">🛒</span>W koszyku<span class="n">${done.length}</span></div></div>`;
     for (const it of done.slice().sort((a, b) => (a.doneAt || a.updatedAt) - (b.doneAt || b.updatedAt))) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
@@ -469,7 +461,6 @@ function buildList() {
   // (a firm band parts your list from everything else; browsing, the leaflet below is enough, no tiles)
   wrap.insertAdjacentHTML('beforeend', '<div class="brk" aria-hidden="true"></div>');
   if (browsing) renderEmpty(wrap);
-  else if (open.length) { wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq); }
   if (!browsing) { wrap.insertAdjacentHTML('beforeend', `<div class="tiles"><div class="c">
     ${total && best ? `<button type="button" class="tile tile--line tile--save" id="tCheap"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">${esc(storeOf(best.id).name)}</span><span class="tile__meta">−${zl(CMP[best.id].save)}<small>na ${CMP[best.id].n} z ${total} ${plural(total, 'produktu', 'produktów', 'produktów')} z listy</small></span><span class="tile__go">${cs.length > 1 ? 'Porównaj' : 'Zobacz'}${ic('chev', 2)}</span></button>`
       : `<div class="tile tile--line tile--quiet"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">—</span><span class="tile__meta"><small>${total ? 'Na Twoje produkty nie ma dziś obniżek w Twoich sklepach.' : 'Dodaj produkty, a porównamy sklepy.'}</small></span></div>`}
@@ -624,7 +615,7 @@ function renderEmpty(wrap) {
       : !l.some(o => o.cat !== 'alkohol') ? `<div class="epw">W tym tygodniu brak promocji spożywczych.</div>${allBtn(s.id, l.length)}`
       : rankLeaf(l).filter(o => o.cat !== 'alkohol').slice(0, 5).map(o => { const r = epRow(o); return has(o.title || o.name) ? r.replace('class="ep"', 'class="ep in"').replace(/<span class="pl"[^>]*>[\s\S]*?<\/span>/, m => m.replace(/<svg[\s\S]*<\/svg>/, ic('check', 2.4))) : r; }).join('') + allBtn(s.id, l.length);
     return `<div class="eps" data-store="${s.id}" style="--sc:${s.color}"><div class="esh"><i></i>${esc(s.name)}</div>${body}</div>`; };
-  wrap.insertAdjacentHTML('beforeend', `${picks.length ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div>${pillRows(picks)}</section>` : ''}
+  wrap.insertAdjacentHTML('beforeend', `${picks.length && !onList.size ? `<section class="sec ex${exShown ? ' still' : ''}" data-anchor="picks"><div class="h"><div class="c">Może cię zainteresować</div></div>${pillRows(picks)}</section>` : ''}
     <section class="sec ex${exShown ? ' still' : ''}" data-anchor="promos"><div class="h"><div class="c">Promocje w tym tygodniu</div></div>${(() => { const picked = stores.filter(x => (EP[x.id] || []).some(o => has(o.title || o.name))); return (picked.length ? [picked.find(x => x.id === cur) || picked[0]] : stores).map(promoBlock).join(''); })()}<p class="note">Z gazetek sieci (ding.pl). Dotknij, żeby dodać na listę.</p></section>`);
   exShown = true; wireAdds(wrap.querySelectorAll('.ex'), false, true); wireAll(wrap); loadShopPromos(); }
 function clearAllSheet() { const all = Object.values(C.items).filter(i => !i.deleted), n = all.length; if (!n) return;
@@ -770,15 +761,15 @@ function renderPin() {
 
 // ---------- the page ----------
 let storesKey = '';
-// (the shop: one switcher, ‹ Biedronka ›; swipe or the arrows step through your shops, a tap on the name opens them all)
+// (the shop, on top of the header: a tap on the name opens your shops, a swipe steps through them)
 let storeSw = null;
 const cheapest = () => { const cs = MY().filter(x => CMP[x.id] && CMP[x.id].n && CMP[x.id].save > 0).sort((a, b) => CMP[b.id].save - CMP[a.id].save); return cs[0] ? cs[0].id : null; };
 function setStore(id) { if (id === store()) return; resetPromos(id); put('settings', { id: 'store', value: id }); promosSoon(); vib(6); }
 function renderStores() { const cur = storeOf(store()), best = cheapest(), el = $('#swName'); if (!el) return;
   const key = myIds().join(',') + '|' + cur.id + '|' + best; if (key === storesKey) return; storesKey = key;
-  el.style.setProperty('--sc', cur.color); el.innerHTML = `<i class="dot"></i>${esc(cur.name)}${best === cur.id ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''}`;
+  el.style.setProperty('--sc', cur.color); el.innerHTML = `<i class="dot"></i><span class="ah-n">${esc(cur.name)}</span>${ic('down', 2.2)}`;
   if (storeSw) return;
-  storeSw = switcher($('#storeSw'), { prev: $('#swPrev'), next: $('#swNext'), name: el,
+  storeSw = switcher($('#storeSw'), { name: el,
     onStep: d => { const ids = myIds(), i = ids.indexOf(store()); setStore(ids[(i + d + ids.length) % ids.length]); },
     items: () => { const b0 = cheapest(); return MY().map(x => ({ id: x.id, selected: x.id === store(), html: `<span class="sw-o" style="--sc:${x.color}"><i class="dot"></i>${esc(x.name)}${x.id === b0 ? ' <span class="badge badge--promo badge--pill">najtaniej</span>' : ''}</span>${CMP[x.id] && CMP[x.id].save > 0 ? `<small>−${zl(CMP[x.id].save)}</small>` : ''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` })); },
     onPick: id => setStore(id),
@@ -795,10 +786,9 @@ function storesSheet() { const mine = myIds(), all = [...mine.map(id => storeOf(
 let mounted = false;   // (the cover's own scroll drives the aisle pills)
 function mount() {
   $('#app').innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="graphite" x="-5%" y="-200%" width="110%" height="500%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
-    <section class="hero"><div class="c"><div class="hrow"><h1 id="h1"></h1><div class="acts">
-      <button class="btn btn--secondary gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
-      <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div><p id="lead"></p></div></section>
-    <nav class="stores" aria-label="Sklep"><div class="c"><div class="swhost"><div class="switcher switcher--block" id="storeSw"><button class="sw-arrow" type="button" id="swPrev" aria-label="Poprzedni sklep">${ic('chev', 2.2)}</button><span class="sw-name" id="swName"></span><button class="sw-arrow" type="button" id="swNext" aria-label="Następny sklep">${ic('chev', 2.2)}</button></div></div></div></nav>
+    <header class="top apphead"><div class="c"><div class="ah-store"><div class="ah-sw" id="storeSw"><span class="sw-name ah-name" id="swName"></span></div><small class="ah-sub" id="ahSub"></small></div>
+      <div class="acts"><button class="btn btn--secondary gzb" id="leafBtn" type="button">${ic('paper', 1.9)}<span>Gazetki</span></button>
+      <button class="ibtn ibtn--secondary" id="menuBtn" type="button" aria-label="Menu">${ic('more', 2.6)}</button></div></div></header>
     <main id="list"></main>
     <div class="dock"><div class="pblur" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chips" id="chips" hidden></div>
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
@@ -821,17 +811,17 @@ function mount() {
   addEventListener('pointerup', stopVoice); addEventListener('pointercancel', stopVoice); addEventListener('blur', stopVoice);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopVoice(); }); $('.hear').addEventListener('click', stopVoice);   // (a tap on the panel ends it too)
   mounted = true; }
-let heroKey = '';
+// (under the shop's name, small: how many things on your list are on offer here; or what to do with an empty list)
+function renderHead() { const all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), sid = store();
+  const np = open.filter(i => bestOffer(i.name)).length, here = np && cheapest() === sid ? ' · tu dziś najtaniej' : '';
+  $('#ahSub').innerHTML = !all.length ? 'Przytrzymaj mikrofon i powiedz, co kupić' : !open.length ? 'Wszystko z listy jest w koszyku'
+    : prWait === sid ? '<span class="skel skel--text" aria-label="Sprawdzam promocje"></span>'
+    : np ? `<b>${np} ${plural(np, 'produkt', 'produkty', 'produktów')}</b> z listy w promocji${here}` : 'Nic z listy nie jest dziś w promocji'; }
 function render() {
   if (!token) { mounted = false; return renderPin(); }
-  if (!mounted) { mount(); heroKey = ''; }
-  const s = storeOf(store()), all = Object.values(C.items).filter(i => !i.deleted), n = all.filter(i => !i.done).length;
-  renderStores();
+  if (!mounted) mount();
+  renderStores(); renderHead();
   $('#menuBtn').classList.toggle('dot', !online);
-  const day = ['w niedzielę', 'w poniedziałek', 'we wtorek', 'w środę', 'w czwartek', 'w piątek', 'w sobotę'][new Date().getDay()];
-  const h1 = !all.length ? `Co kupujemy<br><mark>${day}?</mark>` : n ? `Do kupienia<br><mark>${n} ${plural(n, 'rzecz', 'rzeczy', 'rzeczy')}</mark>` : 'Wszystko<br><mark>w koszyku</mark>';
-  if (h1 !== heroKey) { heroKey = h1; $('#h1').innerHTML = h1; }
-  $('#lead').textContent = !all.length ? 'Przytrzymaj zielony przycisk i mów. Ułożymy listę tak, jak idziesz przez sklep.' : n ? `Ułożone po kolei, jak idziesz przez ${THRU[s.id] || s.name}.` : 'Lista na dziś odhaczona.';
   renderList(); renderChips(); if (coverOpen) renderCover(); }
 
 if (token) prWait = store(); render(); if (token) { sync(); promosSoon(); compareSoon(); }

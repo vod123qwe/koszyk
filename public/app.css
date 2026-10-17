@@ -19,19 +19,8 @@ svg { display: block; }
 .tag i { width: 1px; height: 22px; background: var(--line); }
 .top .sp { flex: 1; }
 
-/* hero: the count in a big headline, one word lit up */
-.hero .c { padding-top: 34px; padding-bottom: 26px; }
-.hero h1 { margin: 0; font-size: clamp(38px, 10.5vw, 58px); font-weight: 600; line-height: 1.04; letter-spacing: -.045em; }
-.hero mark { display: inline-block; padding: 0 .14em .04em; margin-left: -.04em; background: var(--aqua); color: #0b2b2a; border-radius: 2px; animation: mark .7s .15s var(--ease) both; }
-@keyframes mark { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-.hero p { max-width: 430px; margin: 16px 0 0; font-size: 16px; line-height: 1.45; color: var(--muted); }
 
-/* the stores: a full-width bar of three, split by thin lines */
 
-/* promotions band */
-.pband { border-bottom: 1px solid var(--line); background: var(--mint); animation: rise .45s var(--ease) both; }
-.pband .c { display: flex; align-items: center; gap: 12px; min-height: 52px; font-size: 14px; font-weight: 550; color: var(--cta); }
-:root.dark .pband .c { color: #8fe0b8; }
 
 /* a section per aisle: a small-caps label, then rows each with a full-width line under */
 .sec .h { border-bottom: 1px solid var(--line); }
@@ -89,11 +78,6 @@ svg { display: block; }
 @keyframes hops { 0%, 100% { transform: translateY(0) scale(1.06, .94); } 40% { transform: translateY(-9px); } 80% { transform: translateY(0) scale(1.08, .92); } }
 .sum .c { display: flex; align-items: center; justify-content: space-between; height: 56px; font-size: 13.5px; color: var(--muted); }
 .sum button { text-decoration: underline; text-underline-offset: 3px; }
-.hidebar { border-bottom: 1px solid var(--line); }
-.hidebar .c { display: flex; align-items: center; justify-content: flex-end; height: 52px; }
-.alldone { margin: 0; border-bottom: 1px solid var(--line); }
-.alldone .c { display: block; padding-block: 28px; font-size: 15px; color: var(--muted); }
-.row.fold { height: 0 !important; opacity: 0; transition: height .3s var(--ease), opacity .2s; }
 
 /* the dock */
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--bg); border-top: 1px solid var(--line); padding-bottom: var(--safeB); }
@@ -292,12 +276,6 @@ svg { display: block; }
 :root.dark .cmp .hmore summary { color: #8fe0b8; }
 
 /* no top bar: the leaflets and the menu sit level with the big heading */
-.hrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.hrow .acts { display: flex; gap: 8px; flex: none; margin-top: clamp(0px, 1.2vw, 6px); }
-.hero .c { padding-top: 26px; }
-/* "N produktów z listy taniej": a banner like the deal panels, with air above and below */
-.pband { border: 0; background: none; padding: 18px 0 6px; }
-.pband .c { min-height: 0; }
 /* the shop tabs: "najtaniej" sits on the top edge, so every name lines up */
 @media (max-width: 440px) { .gzb { width: 42px; padding: 0; justify-content: center; } .gzb span { display: none; } }
 
@@ -372,16 +350,10 @@ svg { display: block; }
 /* the shop's offers under the list: a sticky head with aisle pills, groups, "Doczytaj więcej" */
 
 /* ===== on the DS (11.10): shops as pills, more air at the top, a rounded highlight, the compare banner ===== */
-.hero .c { padding-top: 28px; padding-bottom: 6px; }
-.hero mark { border-radius: var(--r-sm); padding: 0 .18em .06em; }
-.stores { border: 0; margin: var(--s-6) 0 var(--s-2); }
-.stores .c { display: flex; align-items: center; gap: var(--s-2); }
 .stbs { flex: 1; min-width: 0; display: flex; gap: var(--s-2); overflow-x: auto; scrollbar-width: none; padding: 12px 2px 4px; margin: -12px -2px -4px; }
 .stb { height: var(--h-lg); padding: 0 var(--s-5); font-size: var(--fs-md); }
 .stb.chip--on .dot { box-shadow: 0 0 0 2px var(--ctaInk); }
-.stores .addSt, .stores .ordBtn { width: var(--h-lg); height: var(--h-lg); color: var(--muted); }
-.pband { padding: var(--s-4) 0 var(--s-2); }
-.sec:first-of-type .h .c, .pband + .sec .h .c { padding-top: var(--s-5); }
+.sec:first-of-type .h .c { padding-top: var(--s-5); }
 /* compare banner + sheet */
 .cmpb { margin: var(--s-8) 0 var(--s-7); }
 .cmpb .banner { background: var(--soft); box-shadow: inset 0 0 0 1px var(--line); padding: var(--s-4) var(--s-4) var(--s-4) var(--s-3); }
@@ -515,7 +487,6 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 :root.dark .frq__plus { background: rgba(255,255,255,.08); }
 .pin h1 { margin-top: 0; }
 /* the count in the heading: our green behind, a bright pastel green on it */
-.hero mark { background: var(--markBg); color: var(--markInk); }
 /* "Często kupujesz": the rail starts where the list starts (snapping respects the inset) */
 .frq { padding: var(--s-4) var(--gutter) var(--s-2); scroll-padding-inline: var(--gutter); }
 @media (min-width: 672px) {
@@ -528,17 +499,11 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .ex + .ex { margin-top: var(--s-2); }
 
 /* the shop switcher in place of the row of pills */
-.stores { margin: var(--s-6) 0 var(--s-2); }
-.swhost { position: relative; display: flex; padding-top: 14px; }
-.stores .swhost { flex: 1; min-width: 0; }
 /* suggestion pills: calm outline, no aisle colours (only the discount stays green) */
 .frq__chip, .frq__chip.chip--tile { background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line); }
 @media (hover: hover) { .frq__chip:hover { background: var(--soft); } }
 .frq__plus { background: var(--soft); color: var(--ink); }
 :root.dark .frq__plus { background: var(--soft); }
-/* "N produktów z listy taniej": a quiet grey status; only the % mark keeps the green */
-.pband .banner { background: var(--soft); box-shadow: none; color: var(--muted); font-weight: var(--fw-medium); padding: 10px 14px 10px 10px; }
-.pband .banner .badge--promo { flex: none; }
 /* rows: more air top and bottom, more still when a row carries a deal or extra lines */
 .line .c { padding-top: 14px; padding-bottom: 14px; min-height: 72px; }
 .row:has(.deal) .line .c, .row:has(.subs) .line .c, .row:has(.meta) .line .c { padding-top: 18px; padding-bottom: 18px; }
@@ -597,3 +562,23 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .brk { margin-top: var(--s-7); }
 .brk + .freq { margin-top: var(--s-3); }
 .tiles .tile--line { aspect-ratio: auto; }
+
+/* header: the shop on top (a tap opens your shops), under it how many things on the list are on offer; Gazetki and menu beside. Sticks while scrolling */
+.apphead { top: env(safe-area-inset-top, 0px); }
+.apphead .c { height: auto; min-height: 64px; padding-block: var(--s-3); justify-content: space-between; gap: var(--s-3); }
+.ah-store { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.ah-sw { position: relative; z-index: 2; max-width: 100%; touch-action: pan-y; }
+.ah-name.sw-name { max-width: 100%; min-width: 0; justify-content: flex-start; gap: 8px; padding: 2px 6px 2px 0; font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+.ah-name .ah-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ah-name svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
+.ah-sub { min-height: 18px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.ah-sub b { font-weight: 600; color: var(--ink); }
+.ah-sub .skel { display: inline-block; width: 160px; vertical-align: middle; }
+.apphead .acts { display: flex; gap: var(--s-2); flex: none; }
+#list > .freq:first-child { margin-top: var(--s-2); }
+
+/* what is already in the cart: parted from what is still to buy by a band and more air */
+.sec.bought { margin-top: var(--s-6); }
+.sec.bought::before { content: ''; display: block; height: 8px; background: var(--soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.sec.bought .h .c { padding-top: var(--s-5); }
+
