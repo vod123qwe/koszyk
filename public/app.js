@@ -10,6 +10,8 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toStr
 const norm = s => String(s || '').toLowerCase().replace(/[^a-ząćęłńóśźż0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 const foldPL = s => String(s).toLowerCase().replace(/[ąćęłńóśźż]/g, c => 'acelnoszz'['ąćęłńóśźż'.indexOf(c)]);   // (no Polish marks: "maslo" = "masło")
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch { } };
+// (an app, not a page: no pinch or double-tap zoom; iOS ignores user-scalable=no, so its pinch gesture is stopped here too)
+['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 const zl = n => n.toFixed(2).replace('.', ',') + ' zł';
 
 // ---------- icons (line, 24px) ----------
@@ -231,23 +233,34 @@ function suggestions() {
 // ---------- adding: from the voice or the field ----------
 const openItems = () => Object.values(C.items).filter(i => !i.deleted && !i.done);
 let newIds = new Set(); const ticking = new Set(), lit = new Map();   // (lit: id -> when its highlight started)
+// (a product said again adds to what is on the list: "mleko" twice is 2; "2 mleka" on top of 1 is 3; in kilos or litres one more,
+//  in grams, decagrams or millilitres the same amount again; a different unit replaces the old amount)
+const SMALL_UNITS = ['g', 'dag', 'ml'];
+// (the same product in another number counts too: "chleb" and "chleby", "bułka" and "bułki", "jajko" and "jajka"; "ser" is not "serek")
+const END_ = ['', 'a', 'e', 'i', 'o', 'y', 'ów'];
+const sameWord = (a, b) => { if (a === b) return true; let i = 0; while (i < a.length && a[i] === b[i]) i++; return i >= 3 && END_.includes(a.slice(i)) && END_.includes(b.slice(i)); };
+const sameProduct = (a, b) => { const x = norm(a).split(' '), y = norm(b).split(' '); return x.length === y.length && x.every((w, i) => sameWord(w, y[i])); };
+function moreOf(ex, it) { const u = ex.unit ?? null, r = n => Math.round(n * 100) / 100;
+  if (it.qty != null) return (it.unit ?? null) === u ? { qty: r((ex.qty ?? 1) + it.qty), unit: u } : { qty: it.qty, unit: it.unit ?? null };
+  return { qty: r((ex.qty ?? 1) + (SMALL_UNITS.includes(u) && ex.qty ? ex.qty : 1)), unit: u }; }
 function addItems(list, removes = []) {
-  const added = [], dupes = []; const open = openItems();
-  for (const it of list) { const ex = open.find(o => norm(o.name) === norm(it.name));
-    if (ex) { if (it.qty != null) put('items', { ...ex, qty: it.qty, unit: it.unit }, true); dupes.push(ex.name); lit.set(ex.id, Date.now()); continue; }   // (already there: say so and light it up)
+  const added = [], bumped = []; const open = openItems();
+  for (const it of list) { const ex = open.find(o => sameProduct(o.name, it.name));
+    if (ex) { const nx = { ...ex, ...moreOf(ex, it) }; put('items', nx, true); open[open.indexOf(ex)] = nx; bumped.push(nx); lit.set(ex.id, Date.now()); continue; }   // (already there: one more, lit up)
     const item = { id: uid(), name: it.name, qty: it.qty ?? null, unit: it.unit ?? null, cat: CATS[it.category || it.cat] ? (it.category || it.cat) : 'dom', emoji: it.emoji || null, note: it.note || null,
       q: it.question || null, opts: (it.options || []).slice(0, 3), done: false, deleted: false, createdAt: Date.now() };
     newIds.add(item.id); lit.set(item.id, Date.now()); put('items', item, true); added.push(item); }
   const gone = []; for (const r of removes) { const ex = open.find(o => !o.deleted && !gone.includes(o.name) && (norm(o.name).includes(norm(r)) || norm(r).includes(norm(o.name)))); if (ex) { put('items', { ...ex, deleted: true }, true); gone.push(ex.name); } }
-  added.removed = gone; added.dupes = dupes;
+  added.removed = gone; added.bumped = bumped;
   render(); promosSoon(); compareSoon(); setTimeout(() => newIds.clear(), 1200); setTimeout(() => { const t = Date.now(); lit.forEach((at, id) => t - at > 4400 && lit.delete(id)); }, 4500);
-  const firstId = added[0] ? added[0].id : dupes.length ? (open.find(o => o.name === dupes[0]) || {}).id : null; if (firstId) { focusRow = { id: firstId, until: Date.now() + 2500 }; if (!adderOpen) showFocus(true); }
+  const firstId = added[0] ? added[0].id : bumped.length ? bumped[0].id : null; if (firstId) { focusRow = { id: firstId, until: Date.now() + 2500 }; if (!adderOpen) showFocus(true); }
   return added; }
+const moreMsg = items => `Dodano: ${items.map(i => `${i.name} (razem ${qtyText(i)})`).join(', ')}`;
 async function addText(text) {
   text = fixWords(text.trim()); if (!text) return;
   hear(text, 'think');
   try { const r = await api('/api/parse', { text }); const added = addItems(r.items || [], r.remove || []);
-    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.dupes.length ? `Już jest na liście: ${added.dupes.join(', ')}` : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); return added; }
+    hear(null); const gone = added.removed || []; if (added.length) snack(added, text, 'Dodano', gone); else toast(gone.length ? `Usunięto: ${gone.join(', ')}` : added.bumped.length ? moreMsg(added.bumped) : (r.remove || []).length ? 'Tego nie ma na liście' : 'Nic nowego na liście'); return added; }
   catch (e) { hear(null); if (e.message !== 'auth') { const added = addItems(text.split(/[,;\n]+/).map(s => ({ name: s.trim().replace(/^./, c => c.toUpperCase()), category: 'dom' })).filter(i => i.name)); if (added.length) snack(added, text, 'Bez sieci, dodano'); return added; } } }
 
 // ---------- the voice: hold the button and speak; let go and it goes on the list ----------
@@ -531,7 +544,7 @@ const wireAdds = (roots, keep, toggle) => (roots instanceof Element ? [roots] : 
   if (shop && shop !== store()) setStore(shop);
   if (cur) { put('items', { ...cur, deleted: true }); vib(6); return; }
   const added = addItems([{ name, category: b.dataset.cat || undefined }]); vib(8);
-  if (keep) { b.classList.add('in', 'is-in'); const pl = b.querySelector('.pl, .offer__add'); if (pl) pl.innerHTML = ic('check', 2.4); toast(`Dodano: ${name}`); } else if (added.length) snack(added, name); })));
+  if (keep) { b.classList.add('in', 'is-in'); const pl = b.querySelector('.pl, .offer__add'); if (pl) pl.innerHTML = ic('check', 2.4); toast(added.bumped.length ? moreMsg(added.bumped) : `Dodano: ${name}`); } else if (added.length) snack(added, name); else if (added.bumped.length) toast(moreMsg(added.bumped)); })));
 const allBtn = (id, n) => `<button type="button" class="seeall" data-all="${id}">Zobacz całą gazetkę <b>${n}</b>${ic('chev', 2)}</button>`;
 // (the whole leaflet in a sheet, by aisle in this shop's order; adding keeps it open)
 const dm = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
