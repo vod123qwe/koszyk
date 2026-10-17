@@ -214,10 +214,10 @@ function emojiGuess(name) { if ((CAT.nonfood || []).some(w => (String(name || ''
   return null; }
 const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== 'dom' && looksLikeProduct(it) ? CAT_EMOJI[it.cat] : null);
 function tick(row, it) {
-  if (it.done) { put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
+  if (it.done) { flying = it.id; put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
   if (row.classList.contains('on')) return; row.classList.add('on'); ticking.add(it.id); vib(12);
   setTimeout(() => { const fin = () => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); };
-    if (!hideDone) return fin(); row.style.height = row.offsetHeight + 'px'; void row.offsetHeight; row.classList.add('fold'); setTimeout(fin, 300); }, 560); }
+    if (!hideDone) { flying = it.id; return fin(); } row.style.height = row.offsetHeight + 'px'; void row.offsetHeight; row.classList.add('fold'); setTimeout(fin, 300); }, 560); }
 // (each line a touch its own: nearly straight, the slightest rise and dip, seeded by the item)
 function pencil(id) { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const r = k => ((h >>> k) % 100) / 100;
   const y0 = 4.6 + r(1) * .9, y1 = 4 + r(5) * 1.4, y2 = 4.2 + r(9) * 1.2, y3 = 4.4 + r(13) * 1;
@@ -256,19 +256,37 @@ function rowEl(it) {
 let seenCats = new Set(), chipsKey = '';
 // (bought items can be hidden, so only what is still missing stays on the list; remembered per phone)
 let hideDone = false; try { hideDone = localStorage.getItem('koszyk.hideDone') === '1'; } catch { }
+// ---------- moving lines: a bought item flies down to "W koszyku", the rest slide up into its place (FLIP across the re-render) ----------
+let flying = null; const calm = matchMedia('(prefers-reduced-motion: reduce)');
+const flipKey = el => el.dataset.flip || 'r:' + el.dataset.id;
+function flipSnap(wrap) { const at = new Map(); if (!calm.matches) wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => at.set(flipKey(el), el.getBoundingClientRect().top)); return at; }
+function flipPlay(wrap, was) { const fly = flying; flying = null; if (!was.size) return;
+  wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => { const k = flipKey(el), y = was.get(k);
+    if (y == null) { if (!el.classList.contains('new')) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }); return; }   // (a header or line that just appeared)
+    const dy = y - el.getBoundingClientRect().top; if (Math.abs(dy) < 1) return;
+    if (k !== 'r:' + fly) { el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 440, easing: 'cubic-bezier(.22,.8,.26,1)' }); return; }
+    // (the item itself: lifts off the list, travels, settles; a longer trip takes a little longer)
+    el.style.zIndex = 4; const a = el.animate([
+      { transform: `translateY(${dy}px)`, boxShadow: '0 0 0 0 rgba(20,20,40,0)' },
+      { transform: `translateY(${dy * .82}px) scale(1.035)`, boxShadow: '0 18px 34px -12px rgba(20,20,40,.32)', offset: .28 },
+      { transform: 'none', boxShadow: '0 0 0 0 rgba(20,20,40,0)' }], { duration: Math.min(980, 520 + Math.abs(dy) * .3), easing: 'cubic-bezier(.6,.04,.22,1)' });
+    a.onfinish = a.oncancel = () => { el.style.zIndex = ''; }; }); }
 function renderList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
-  const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length;
+  const s = storeOf(id), np = open.filter(i => bestOffer(i.name)).length, was = flipSnap(wrap);
   wrap.innerHTML = '';
   if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><span class="pill">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div>`);
   if (!all.length) { renderEmpty(wrap); return; }
-  if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="hidebar"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="hideDone" aria-pressed="${hideDone}">${ic(hideDone ? 'eye' : 'eyeOff', 2)}${hideDone ? 'Pokaż kupione' : 'Ukryj kupione'}</button></div></div>`);
+  if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="hidebar" data-flip="bar"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="hideDone" aria-pressed="${hideDone}">${ic(hideDone ? 'eye' : 'eyeOff', 2)}${hideDone ? 'Pokaż kupione' : 'Ukryj kupione'}</button></div></div>`);
     $('#hideDone').onclick = () => { hideDone = !hideDone; try { localStorage.setItem('koszyk.hideDone', hideDone ? '1' : '0'); } catch { } vib(6); render(); }; }
   if (hideDone && done.length && !open.length) wrap.insertAdjacentHTML('beforeend', `<p class="alldone"><span class="c">Wszystko z listy jest już w koszyku.</span></p>`);
-  for (const cat of order) { const its = all.filter(i => i.cat === cat && !(hideDone && i.done)).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
+  for (const cat of order) { const its = open.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat];
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
-    sec.innerHTML = `<div class="h"><div class="c">${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
+    sec.innerHTML = `<div class="h" data-flip="h:${cat}"><div class="c">${esc(c.name)}<span class="n">${its.length}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
+  if (done.length && !hideDone) { const sec = document.createElement('section'); sec.className = 'sec bought';   // (in the order they went into the cart, the latest last)
+    sec.innerHTML = `<div class="h" data-flip="h:bought"><div class="c">${ic('bag', 2)}W koszyku<span class="n">${done.length}</span></div></div>`;
+    for (const it of done.sort((a, b) => (a.doneAt || a.updatedAt) - (b.doneAt || b.updatedAt))) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
   const cs = CAT.stores.filter(x => CMP[x.id]), best = cs.slice().sort((a, b) => CMP[b.id].save - CMP[a.id].save)[0];
   if (open.length && cs.length && best && CMP[best.id].save > 0) {
@@ -276,6 +294,7 @@ function renderList() {
       <div class="lead"><div class="c">W <mark>${IN[best.id]}</mark> dzięki promocjom zaoszczędzisz najwięcej: około ${zl(CMP[best.id].save)} na tej liście.</div></div>
       <div class="grid">${cs.map(x => `<div class="cell${x.id === best.id ? ' best' : ''}" style="--sc:${x.color}"><span class="s"><i></i>${x.name}</span><b>${CMP[x.id].save > 0 ? '−' + zl(CMP[x.id].save) : '0 zł'}</b><small>${CMP[x.id].n} ${plural(CMP[x.id].n, 'produkt', 'produkty', 'produktów')} w promocji</small></div>`).join('')}</div>
       <p class="note">Oszczędność z gazetek, dla produktów z listy. Pełnego kosztu zakupów nie liczymy, bo sklepy nie podają zwykłych cen.</p></section>`); }
+  flipPlay(wrap, was);
   if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="sum"><div class="c"><span>Kupione ${done.length} z ${all.length}</span><button type="button" id="clearDone">Usuń kupione z listy</button></div></div>`);
     $('#clearDone').onclick = () => { done.forEach(i => put('items', { ...i, deleted: true }, true)); render(); }; }
   renderShopPromos(wrap, open); }

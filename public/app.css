@@ -117,6 +117,7 @@ svg { display: block; }
 .hidebar button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .alldone .c { display: block; padding-block: 28px; font-size: 15px; color: var(--muted); }
 .alldone { margin: 0; border-bottom: 1px solid var(--line); }
+.sec.bought .h .c svg { width: 15px; height: 15px; margin: -2px -2px 0 0; }
 .row.fold { height: 0 !important; opacity: 0; transition: height .3s var(--ease), opacity .2s; }
 
 /* the dock */
