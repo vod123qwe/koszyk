@@ -4,6 +4,8 @@ Wspólna lista zakupów (PWA). Dyktujesz, a produkty same układają się w kole
 
 Decyzje projektowe: `docs/plan.md`.
 
+**Wersja demo (klikalna, bez serwera):** https://claude.ai/artifact/VpK7wD2wyP9VwoXNdakwkC
+
 ## Lokalnie
 
 ```
@@ -34,3 +36,4 @@ Każdy push na `main` wdraża się sam (1–3 min). Darmowy plan usypia serwer p
 - `lib/local-parse.js` — parser dyktowania bez AI. `lib/ai.js` — parser z Claude.
 - `lib/promos.js` — promocje z ding.pl (nieoficjalne API, może się zmienić).
 - `public/` — apka (vanilla JS, bez buildu). `public/catalog.json` — działy, sklepy, słowa kluczowe, marki, emoji, słownik dyktowania.
+- `demo/` — klikalna wersja demo jako jedna strona (Artifact na claude.ai): `node demo/build.mjs` składa `public/` z `demo/shim.js`, który odpowiada na `/api/*` w przeglądarce (lista w localStorage, parser lokalny, promocje z `demo/leaflets.json`). Kopię gazetek odświeża workflow **Demo leaflets snapshot** (Actions → Run workflow). W demo nie ma wspólnej listy ani mikrofonu.
