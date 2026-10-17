@@ -589,3 +589,7 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 
 /* no zooming with gestures (pinch, double tap); scrolling and the app's own swipes stay. Rules with their own touch-action win */
 * { touch-action: pan-x pan-y; }
+
+/* "Często kupujesz": "Zobacz wszystkie" on the right of the heading; the full page reuses the leaflet's cover */
+.freq .h .fq-all { margin-left: auto; letter-spacing: 0; text-transform: none; }
+.fqv .fq-new { margin-bottom: var(--s-3); }

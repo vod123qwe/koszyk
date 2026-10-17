@@ -209,14 +209,15 @@ const ART_LEAF = `<span class="tile__artbox" aria-hidden="true"><svg class="tile
     <rect class="a-line" x="40" y="30" width="18" height="14" rx="3"/><rect class="a-line" x="64" y="30" width="14" height="4" rx="2"/><rect class="a-line" x="64" y="38" width="10" height="4" rx="2"/>
     <rect class="a-line" x="40" y="52" width="38" height="4" rx="2"/><rect class="a-line" x="40" y="60" width="28" height="4" rx="2"/></g>
   <circle class="a-main" cx="86" cy="82" r="18"/><text class="a-mark" x="86" y="89" text-anchor="middle">%</text></svg></span>`;
-function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))), now = Date.now(), out = [], seen = new Set();
-  const hs = Object.values(C.history).filter(h => looksLikeProduct(h) && !onList.has(norm(h.name)));
+// (everything you buy, the most likely first: often, due again by your rhythm, on offer now, bought lately; then the common basics)
+function freqAll() { const now = Date.now(), out = [], seen = new Set();
   const score = h => h.count + (h.count >= 2 && h.avg && (now - h.lastAt) / h.avg > .8 ? 3 : 0) + (leafHit(h.name, h.cat) && offPct(leafHit(h.name, h.cat)) > 0 ? 1.5 : 0) + Math.max(0, 1 - (now - h.lastAt) / (30 * 864e5));
-  for (const h of hs.sort((a, b) => score(b) - score(a))) { const k = norm(h.name); if (!seen.has(k)) { seen.add(k); out.push({ name: h.name, cat: h.cat, emoji: h.emoji }); } }
-  for (const [name, cat] of CAT.common || []) { if (out.length >= 18) break; const k = norm(name); if (!seen.has(k) && !onList.has(k)) { seen.add(k); out.push({ name, cat }); } }
-  return out.slice(0, 18); }
+  for (const h of Object.values(C.history).filter(looksLikeProduct).sort((a, b) => score(b) - score(a))) { const k = norm(h.name); if (!seen.has(k)) { seen.add(k); out.push({ name: h.name, cat: h.cat, emoji: h.emoji, h }); } }
+  for (const [name, cat] of CAT.common || []) { const k = norm(name); if (!seen.has(k)) { seen.add(k); out.push({ name, cat }); } }
+  return out; }
+function freqPicks() { const onList = new Set(openItems().map(i => norm(i.name))); return freqAll().filter(p => !onList.has(norm(p.name))).slice(0, 18); }
 function freqHtml() { const picks = freqPicks(); if (!picks.length) return '';
-  return `<section class="freq" data-anchor="freq"><div class="h"><div class="c">Często kupujesz<span class="n">dotknij, żeby dodać</span></div></div>${pillRows(picks)}</section>`; }
+  return `<section class="freq" data-anchor="freq"><div class="h"><div class="c">Często kupujesz<button type="button" class="btn btn--ghost btn--sm fq-all" data-fqall>Zobacz wszystkie</button></div></div>${pillRows(picks)}</section>`; }
 // (two rows packed by width, so there are no gaps between pills; the rows scroll sideways together)
 function pillRows(picks) {
   const rows = [[], []], w = [0, 0]; picks.forEach((p, i) => { const r = w[0] <= w[1] ? 0 : 1; rows[r].push([p, i]); w[r] += p.name.length + 6; });
@@ -455,7 +456,7 @@ function buildList() {
   wrap.innerHTML = '';
   if (!all.length) { browsing = true; renderEmpty(wrap); return; }
   // (what you often buy, on top: one tap puts it on the list; it stands in for "Może cię zainteresować" while browsing too)
-  wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) { wireAdds(fq); fq.classList.toggle('still', freqShown); freqShown = true; }   // (the pills rise in once, not on every rebuild)
+  wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) { wireAdds(fq); fq.querySelector('[data-fqall]').onclick = openFreqAll; fq.classList.toggle('still', freqShown); freqShown = true; }   // (the pills rise in once, not on every rebuild)
   // (the aisles hold only what is still missing; bought items go to the very bottom, in the order they went into the cart)
   for (const cat of order) { const its = open.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat];
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
@@ -575,6 +576,24 @@ function cvGroups(id) { const ranked = rankLeaf(EP[id] || []), my = mine().slice
   const forMe = ranked.filter(o => my.some(h => offerFits(o.name, h.name) && every(o.title || o.name, h.name) && (!h.cat || h.cat === 'dom' || !o.cat || o.cat === h.cat))).slice(0, 8), by = {};
   for (const o of ranked) if (!forMe.includes(o)) (by[o.cat] = by[o.cat] || []).push(o);
   return [...(forMe.length ? [{ id: 'mine', title: 'Dla Ciebie', emoji: '★', items: forMe }] : []), ...[...orderFor(id).filter(c => by[c] && c !== 'alkohol'), ...(by.alkohol ? ['alkohol'] : [])].map(c => ({ id: c, title: CATS[c].name, emoji: CAT_EMOJI[c], items: by[c] }))]; }
+// ---------- "Często kupujesz": the whole list, with a search; a tap puts a product on the list (or one more of it) ----------
+let fqOpen = false, fqQ = '';
+function openFreqAll() { const el = $('.fqv'); if (!el) return; fqOpen = true; fqQ = ''; $('#fqQ').value = ''; el.hidden = false; renderFreqAll(); $('.fq-body').scrollTop = 0;
+  requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
+function closeFreqAll() { const el = $('.fqv'); if (!el || !fqOpen) return; fqOpen = false; el.classList.remove('show'); $('#fqQ').blur();
+  if (!coverOpen) document.documentElement.classList.remove('locked'); setTimeout(() => { if (!fqOpen) el.hidden = true; }, 420); }
+function renderFreqAll() { const body = $('.fq-body'); if (!body || !fqOpen) return;
+  const all = freqAll(), typed = fqQ.trim(), q = foldPL(typed), open = openItems();
+  const hits = q ? all.filter(p => foldPL(p.name).includes(q)) : all;
+  $('.fq-sub').textContent = `${all.length} ${plural(all.length, 'produkt', 'produkty', 'produktów')}`;
+  const row = p => { const cur = open.find(o => sameProduct(o.name, p.name)), o = leafHit(p.name, p.cat), deal = o && offPct(o) > 0, h = p.h;
+    const meta = [cur ? `na liście${cur.qty != null ? ': ' + qtyText(cur) : ''}` : '', h && h.count ? `kupione ${h.count}×` : '', h && h.count >= 2 && h.avg ? `co ~${Math.max(1, Math.round(h.avg / 864e5))} dni` : ''].filter(Boolean).join(' · ');
+    return `<button class="offer offer--row${cur ? ' is-in' : ''}" type="button" data-fq="${esc(p.name)}" data-cat="${esc(p.cat || '')}" aria-label="${esc(`Dodaj: ${p.name}`)}"><span class="offer__media" style="--tile:var(--t-${p.cat || 'dom'})">${esc(emojiGuess(p.name) || p.emoji || CAT_EMOJI[p.cat] || '•')}</span><span class="offer__body"><b class="offer__name">${esc(p.name)}</b>${meta ? `<span class="offer__meta">${esc(meta)}</span>` : ''}</span><span class="offer__side">${deal ? `<span class="badge badge--promo">${pct(o)}</span><b>${zl(o.price)}</b>` : ''}</span><span class="offer__add" aria-hidden="true">${cur ? ic('check', 2.4) : ic('plus', 2.2)}</span></button>`; };
+  // (what you typed and is not on the list yet can go straight on it)
+  const fresh = typed && !all.some(p => sameProduct(p.name, typed));
+  body.innerHTML = `<div class="cv-in">${fresh ? `<button class="btn btn--secondary btn--block fq-new" type="button" data-new>${ic('plus', 2.2)}<span>Dodaj „${esc(typed)}”</span></button>` : ''}${hits.length ? `<div class="offers offers--rows">${hits.map(row).join('')}</div>` : fresh ? '' : '<div class="cv-empty"><p>Nic takiego jeszcze nie kupowałeś.</p></div>'}</div>`;
+  body.querySelectorAll('[data-fq]').forEach(b => b.onclick = () => { const added = addItems([{ name: b.dataset.fq, category: b.dataset.cat || undefined }]); vib(8); toast(added.bumped.length ? moreMsg(added.bumped) : `Dodano: ${b.dataset.fq}`); });
+  const nb = body.querySelector('[data-new]'); if (nb) nb.onclick = () => { vib(8); addText(typed); fqQ = ''; $('#fqQ').value = ''; renderFreqAll(); }; }
 function openCover(id) { const el = $('.cover'); if (!el) return;
   cvStore = typeof id === 'string' && MY().some(s => s.id === id) ? id : store(); cvCat = 'all'; cvQ = ''; cvSearch = false; cvHeadKey = cvBodyKey = '';
   coverOpen = true; el.hidden = false; loadShopPromos(); renderCover(true); requestAnimationFrame(() => el.classList.add('show')); document.documentElement.classList.add('locked'); }
@@ -807,18 +826,20 @@ function mount() {
       <div class="c bar"><button class="field opener" id="f" type="button" aria-haspopup="dialog">${ic('plus', 2)}<span>Dopisz produkt…</span></button>
       <button class="ibtn ibtn--primary ibtn--xl mic" id="mic" type="button" aria-label="Przytrzymaj i mów">${ic('mic', 2)}</button></div></div>
     <div class="hear" aria-live="polite"><small><span class="wave"><b></b><b></b><b></b><b></b></span><span class="orbs small"><i></i><i></i><i></i></span><span class="lbl">Słucham</span></small><p class="ph"></p></div>
-    <div class="cover" role="dialog" aria-modal="true" aria-label="Gazetka" hidden><div class="cv-top"><div class="cv-bar"><button class="ibtn ibtn--secondary" type="button" id="cvClose" aria-label="Zamknij">${ic('x', 2)}</button><div class="cv-t"><b>Gazetka</b><small class="cv-sub"></small></div><button class="ibtn ibtn--secondary" type="button" id="cvFind" aria-label="Szukaj" aria-pressed="false">${ic('search', 2)}</button><div class="seg seg--icons" id="cvView" role="group" aria-label="Widok"></div></div><div class="cv-head"></div></div><div class="cv-body"></div></div><div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
+    <div class="cover" role="dialog" aria-modal="true" aria-label="Gazetka" hidden><div class="cv-top"><div class="cv-bar"><button class="ibtn ibtn--secondary" type="button" id="cvClose" aria-label="Zamknij">${ic('x', 2)}</button><div class="cv-t"><b>Gazetka</b><small class="cv-sub"></small></div><button class="ibtn ibtn--secondary" type="button" id="cvFind" aria-label="Szukaj" aria-pressed="false">${ic('search', 2)}</button><div class="seg seg--icons" id="cvView" role="group" aria-label="Widok"></div></div><div class="cv-head"></div></div><div class="cv-body"></div></div>
+    <div class="cover fqv" role="dialog" aria-modal="true" aria-label="Często kupujesz" hidden><div class="cv-top"><div class="cv-bar"><button class="ibtn ibtn--secondary" type="button" id="fqClose" aria-label="Zamknij">${ic('x', 2)}</button><div class="cv-t"><b>Często kupujesz</b><small class="fq-sub"></small></div></div><div class="cv-head"><label class="cv-find">${ic('search', 2)}<input id="fqQ" type="search" placeholder="Szukaj produktu" autocomplete="off" enterkeyhint="search" aria-label="Szukaj produktu"></label></div></div><div class="cv-body fq-body"></div></div><div class="adder" role="dialog" aria-modal="true" aria-label="Dopisz produkty" hidden><div class="ad-in"><div class="ad-top"><span class="grab"></span><h3>Dopisz</h3><span class="ad-msg" role="status"></span><button class="btn btn--primary btn--sm ad-done" type="button">Gotowe</button></div><div class="ad-list" id="adList"></div><form class="ad-bar" id="adF"><input class="input" id="adQ" placeholder="Wpisz produkt, np. mleko 2 litry" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" aria-label="Produkt"><button class="ibtn ibtn--primary ibtn--lg ad-send" type="submit" aria-label="Dodaj">${ic('up', 2.2)}</button></form></div></div><div class="toast" role="status"></div><div class="snack" role="status" aria-live="polite"><span class="st"></span><button type="button" data-s="edit">Zmień</button><button type="button" class="sx" data-s="del">${ic('trash', 1.8)}</button></div><div class="scrim"></div><div class="sheet" role="dialog" aria-modal="true"></div>`;
   addEventListener('scroll', () => $('.top') && $('.top').classList.toggle('lined', scrollY > 6), { passive: true });
   $('#menuBtn').onclick = menuSheet; $('#leafBtn').onclick = openCover;
   $('#f').onclick = () => openAdder();
   const aq = $('#adQ'); aq.oninput = () => { if (!aq.value.trim()) editFrom = null; adderRender(); };
   $('#adF').onsubmit = e => { e.preventDefault(); submitText(aq.value); };
   $('.ad-done').onclick = closeAdder; $('#cvClose').onclick = closeCover;
+  $('#fqClose').onclick = closeFreqAll; $('#fqQ').oninput = e => { fqQ = e.target.value; renderFreqAll(); };
   $('#cvFind').onclick = () => { cvSearch = !cvSearch; if (!cvSearch) cvQ = ''; renderCover(true); };
   $('#cvView').onclick = e => { const b = e.target.closest('[data-view]'); if (!b) return; try { localStorage.setItem('koszyk.leafView', b.dataset.view); } catch { } vib(4); renderCover(true); };
   $('.cv-body').addEventListener('error', coverImgFallback, true); $('.adder').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdder(); });
   $('#adList').addEventListener('pointerdown', e => { if (e.target.closest('button')) e.preventDefault(); });   // (keep the keyboard up while tapping suggestions)
-  addEventListener('keydown', e => { if (e.key === 'Escape' && adderOpen) closeAdder(); else if (e.key === 'Escape' && coverOpen && !$('.sheet.show')) closeCover(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && fqOpen && !$('.sheet.show')) closeFreqAll(); else if (e.key === 'Escape' && adderOpen) closeAdder(); else if (e.key === 'Escape' && coverOpen && !$('.sheet.show')) closeCover(); });
   const mic = $('#mic'); mic.addEventListener('pointerdown', e => { e.preventDefault(); startVoice(); }); mic.addEventListener('contextmenu', e => e.preventDefault());
   mic.addEventListener('lostpointercapture', stopVoice); mic.addEventListener('pointerdown', e => { try { mic.setPointerCapture(e.pointerId); } catch { } });
   addEventListener('pointerup', stopVoice); addEventListener('pointercancel', stopVoice); addEventListener('blur', stopVoice);
@@ -835,7 +856,7 @@ function render() {
   if (!mounted) mount();
   renderStores(); renderHead();
   $('#menuBtn').classList.toggle('dot', !online);
-  renderList(); renderChips(); if (coverOpen) renderCover(); }
+  renderList(); renderChips(); if (coverOpen) renderCover(); if (fqOpen) renderFreqAll(); }
 
 if (token) prWait = store(); render(); if (token) { sync(); promosSoon(); compareSoon(); }
 if ('serviceWorker' in navigator && !/^(localhost|127\.)/.test(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => { });
