@@ -5,10 +5,11 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { localParse } = require('./lib/local-parse');
+const zlib = require('zlib');
+const { localParse, catFor, emojiFor } = require('./lib/local-parse');
 const { aiParse, aiOn } = require('./lib/ai');
 const { promosFor, leaflet } = require('./lib/promos');
-const CAT_STORES = () => require('./public/catalog.json').stores.map(s => s.id);
+const CAT_STORES = () => { const m = db && db.collections && db.collections.settings && db.collections.settings.myStores; return Array.isArray(m && m.value) && m.value.length ? m.value : ['lidl', 'biedronka', 'kaufland']; };   // (the family's shops)
 
 const PORT = process.env.PORT || 8820;
 const PIN = process.env.KOSZYK_PIN || '1234';
@@ -52,13 +53,27 @@ function applyChanges(changes) { let n = 0;
     if (!ex || (ch.item.updatedAt || 0) >= (ex.updatedAt || 0)) { coll[ch.item.id] = ch.item; n++; } }
   // (sprzątanie: skreślone dawniej niż 2 dni i usunięte dawniej niż 7 dni wypadają z bazy)
   const now = Date.now(); for (const [id, it] of Object.entries(db.collections.items)) if ((it.deleted && now - it.updatedAt > 7 * 864e5) || (it.done && now - (it.doneAt || it.updatedAt) > 2 * 864e5)) { delete db.collections.items[id]; n++; }
+  n += tidyAisles(true);
   if (n) { db.rev++; persist(); } return n; }
+// (products the dictionary did not know landed in "Dom i inne"; once it knows them they move to their aisle and get an icon,
+//  on the list and in the history; an aisle picked by hand never moves)
+function tidyAisles(quiet) { let n = 0; const now = Date.now();
+  for (const col of ['items', 'history']) for (const it of Object.values(db.collections[col])) {
+    if (it.deleted || it.catBy === 'user' || (it.cat && it.cat !== 'dom') || !it.name) continue;
+    if (it.name.length > 32 || it.name.trim().split(/\s+/).length > 4) continue;   // (notes about the app, dictated onto the list, stay where they are)
+    const c = catFor(it.name), e = it.emoji || emojiFor(it.name) || null; if (c === 'dom' && e === (it.emoji || null)) continue;
+    it.cat = c; it.emoji = e; it.updatedAt = now; n++; }
+  if (n && !quiet) { db.rev++; persist(); console.log(`[koszyk] ${n} pozycji w swoich działach`); }
+  return n; }
 const state = () => ({ rev: db.rev, collections: db.collections, ai: aiOn });
 
 // ---------- http ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon' };
-function send(res, status, data) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(typeof data === 'string' ? data : JSON.stringify(data)); }
+// (big answers, like a whole leaflet with photos, go gzipped: a few hundred kB become a few dozen on the phone)
+function send(res, status, data) { const body = typeof data === 'string' ? data : JSON.stringify(data), head = { 'Content-Type': 'application/json; charset=utf-8' };
+  if (body.length > 20000 && /\bgzip\b/.test((res.req && res.req.headers['accept-encoding']) || '')) { head['Content-Encoding'] = 'gzip'; head.Vary = 'Accept-Encoding'; res.writeHead(status, head); return res.end(zlib.gzipSync(body)); }
+  res.writeHead(status, head); res.end(body); }
 function readBody(req) { return new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) req.destroy(); }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { no(new Error('bad json')); } }); req.on('error', no); }); }
 function serveStatic(res, p) { let file = p === '/' ? '/index.html' : p; file = path.normalize(file).replace(/^([.]{2}[/\\])+/, '');
   const full = path.join(PUBLIC_DIR, file); if (!full.startsWith(PUBLIC_DIR)) return send(res, 403, { error: 'forbidden' });
@@ -98,7 +113,7 @@ const server = http.createServer(async (req, res) => {
   const g = await loadGist(), l = loadLocal();
   db = g && l ? (g.rev >= l.rev ? g : l) : (g || l || emptyDb());
   if (!db.tokens) db.tokens = []; for (const c of COLLECTIONS) if (!db.collections[c]) db.collections[c] = {};
-  saveLocal();
+  saveLocal(); tidyAisles();
   // (the leaflets load right away and then every 6 hours, so the first look at the offers is instant)
   const warm = () => Promise.all(CAT_STORES().map(id => leaflet(id).catch(() => { }))).then(() => console.log('[koszyk] gazetki gotowe'));
   setTimeout(warm, 1500); setInterval(warm, 6 * 3600 * 1000 + 60000).unref();

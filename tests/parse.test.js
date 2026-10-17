@@ -45,6 +45,15 @@ const CASES = [
   ['płyn do naczyń', 'Płyn do naczyń @chemia'],
   ['karma dla kota', 'Karma dla kota @zwierzeta'],
   ['coś na obiad', ''],
+  // puszka i słoik zmieniają produkt; kilogramy, kartony i butelki to zwykła ilość
+  ['jedną puszkę pomidorów', 'Pomidory w puszce [1 szt] @konserwy'],
+  ['pół kilo pomidorów i puszka pomidorów', 'Pomidory [0.5 kg] @warzywa | Pomidory w puszce [1 szt] @konserwy'],
+  ['słoik ogórków', 'Ogórki w słoiku [1 szt] @konserwy'],
+  ['suszone pomidory', 'Suszone pomidory @konserwy'],
+  ['ogórki kiszone', 'Ogórki kiszone @warzywa'],
+  ['puszka kukurydzy', 'Kukurydza [1 puszka] @konserwy'],
+  ['słoik miodu', 'Miód [1 słoik] @konserwy'],
+  ['dwie puszki fasoli', 'Fasola [2 puszki] @konserwy'],
   // odmiana po ogólnej nazwie zostaje w jednej pozycji
   ['makaron penne ryż basmati', 'Makaron penne @suche | Ryż basmati @suche'],
   ['ser mozzarella pomidory', 'Ser mozzarella @wedliny | Pomidory @warzywa'],

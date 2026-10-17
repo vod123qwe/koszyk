@@ -3,7 +3,7 @@
   "tagline": "Wspólna lista zakupów: dyktujesz, a produkty same układają się jak w sklepie",
   "description": "PWA dla rodziny (kilka telefonów, wspólna lista). Przytrzymujesz mikrofon i mówisz, AI (Claude) poprawia i rozdziela produkty, dopytuje tylko w wątpliwych. Lista układa się po działach w kolejności wybranego sklepu (Lidl, Biedronka, Kaufland) i uczy się z tego, jak odhaczasz. Promocje produktów z listy z gazetek (ding.pl), podpowiedzi „Może też?”. Node na Render, PIN + token, Gist.",
   "category": "personal",
-  "status": "wip",
+  "status": "active",
   "type": "web-server",
   "tags": [
     "pwa",
@@ -19,13 +19,14 @@
   ],
   "launch": {
     "dev": "node server.js",
-    "devUrl": "http://localhost:8820"
+    "devUrl": "http://localhost:8820",
+    "url": "https://koszyk.onrender.com"
   },
   "links": {
     "repo": "https://github.com/vod123qwe/koszyk",
-    "live": ""
+    "live": "https://koszyk.onrender.com"
   },
   "icon": "cart",
   "accent": "#0E4F47",
-  "notes": "10.10.2026: v3 w prywatnym repo vod123qwe/koszyk + render.yaml; dane w prywatnym Gist. Czeka: Blueprint na Render (Jarek), potem live URL. AI na razie off (parser lokalny)."
+  "notes": "10.10.2026: live na https://koszyk.onrender.com (Render, auto-deploy z main, dane w prywatnym Gist). AI off (parser lokalny, npm test)."
 }

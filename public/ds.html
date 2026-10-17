@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Koszyk DS</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ds/tokens.css">
+<link rel="stylesheet" href="/ds/components.css">
+<style>
+  * { box-sizing: border-box; } body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; border: 0; background: none; cursor: pointer; padding: 0; color: inherit; } svg { display: block; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: var(--s-8) var(--gutter) 120px; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-8); }
+  h1 { margin: 0; font-size: var(--fs-hero); letter-spacing: -.045em; line-height: 1.02; } h1 mark { background: var(--markBg); color: var(--markInk); border-radius: var(--r-sm); padding: 0 .16em; }
+  header p { margin: var(--s-3) 0 0; max-width: 520px; color: var(--muted); line-height: 1.5; }
+  section { padding: var(--s-7) 0; border-top: 1px solid var(--line); }
+  h2 { margin: 0 0 4px; font-size: var(--fs-xl); letter-spacing: -.02em; } .lead { margin: 0 0 var(--s-5); color: var(--muted); font-size: var(--fs-sm); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); margin-bottom: var(--s-4); }
+  .lbl { width: 110px; flex: none; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .sw { width: 128px; } .sw i { display: block; height: 56px; border-radius: var(--r-md); box-shadow: inset 0 0 0 1px var(--line); } .sw b { display: block; margin-top: 6px; font-size: var(--fs-xs); } .sw small { font-size: var(--fs-2xs); color: var(--muted); }
+  .rad i { display: block; width: 64px; height: 48px; background: var(--soft); box-shadow: inset 0 0 0 1px var(--line); } .sp i { display: block; height: 14px; background: var(--aqua); border-radius: 3px; }
+  .demo { padding: var(--s-5); border-radius: var(--r-lg); background: var(--soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div><h1>Koszyk <mark>DS</mark></h1><p>Tokeny i komponenty, z których zbudowana jest apka. Te same pliki (<code>ds/tokens.css</code>, <code>ds/components.css</code>) ładuje aplikacja, więc to, co widać tutaj, jest dokładnie tym, co jest w apce.</p></div>
+    <button class="btn btn--secondary" id="theme" type="button">Ciemny motyw</button></header>
+
+  <section><h2>Kolor</h2><p class="lead">Role, nie odcienie: tło, tekst, akcja główna, promocja, warunki.</p><div class="row" id="colors"></div></section>
+  <section><h2>Zaokrąglenia i odstępy</h2><p class="lead">Skala promieni i 4-punktowa skala odstępów.</p><div class="row" id="radii"></div><div class="row" id="spaces" style="align-items:flex-end"></div></section>
+  <section><h2>Typografia</h2><p class="lead">Onest. Rozmiary z tokenów --fs-*.</p><div id="type"></div></section>
+
+  <section><h2>Button</h2><p class="lead">Akcja tekstowa. Primary = główna akcja ekranu (jedna), secondary = obok, soft/ghost = poboczne, danger = nieodwracalne.</p>
+    <div class="row"><span class="lbl">md</span><button class="btn btn--primary">Gotowe</button><button class="btn btn--secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2"/></svg>Gazetki</button><button class="btn btn--soft">Zostaw</button><button class="btn btn--ghost">Szczegóły</button><button class="btn btn--danger">Wyczyść listę</button></div>
+    <div class="row"><span class="lbl">sm / lg</span><button class="btn btn--primary btn--sm">Gotowe</button><button class="btn btn--secondary btn--sm">Mniejszy</button><button class="btn btn--primary btn--lg">W porządku</button><button class="btn btn--secondary btn--lg">Doczytaj więcej</button></div></section>
+
+  <section><h2>Icon button</h2><p class="lead">Okrągły, jedna ikona. Te same warianty co Button. Mikrofon = primary xl, menu = secondary md.</p>
+    <div class="row"><span class="lbl">warianty</span><button class="ibtn ibtn--primary" aria-label="Dodaj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><button class="ibtn ibtn--secondary" aria-label="Menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><button class="ibtn ibtn--secondary dot" aria-label="Offline"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><button class="ibtn ibtn--soft" aria-label="Plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <div class="row"><span class="lbl">sm → xl</span><button class="ibtn ibtn--primary ibtn--sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="ibtn ibtn--primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="ibtn ibtn--primary ibtn--lg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="ibtn ibtn--primary ibtn--xl" aria-label="Mikrofon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div></section>
+
+  <section><h2>Chip</h2><p class="lead">Wybieralna pigułka: sklepy, działy, filtry. Stan „on” = zieleń akcji głównej (jak mikrofon). Flaga na krawędzi = wyróżnienie („najtaniej”).</p>
+    <div class="row" style="padding-top:10px"><span class="lbl">sklepy</span><button class="chip chip--on" style="--sc:#0050aa;height:var(--h-lg)"><span class="dot"></span>Lidl<span class="badge badge--promo badge--pill flag">najtaniej</span></button><button class="chip" style="--sc:#e30613;height:var(--h-lg)"><span class="dot"></span>Biedronka</button><button class="chip" style="--sc:#e30613;height:var(--h-lg)"><span class="dot"></span>Kaufland</button></div>
+    <div class="row"><span class="lbl">sm / tile</span><button class="chip chip--sm chip--on">★ Dla Ciebie <small>5</small></button><button class="chip chip--sm">🥛 Nabiał i jajka <small>18</small></button><button class="chip chip--sm chip--tile" style="--tile:var(--t-warzywa)">🍌 Banany</button><button class="chip chip--sm chip--tile" style="--tile:var(--t-wedliny)">🧀 Ser żółty</button></div></section>
+
+  <section><h2>Badge</h2><p class="lead">Mała etykieta. Promo = rabat. Warunki promocji: warn = kilka sztuk, info = karta/aplikacja, special = limit, neutral = reszta.</p>
+    <div class="row"><span class="lbl">warianty</span><span class="badge badge--promo">−39%</span><span class="badge badge--warn">przy 2 szt.</span><span class="badge badge--warn">1+1 gratis</span><span class="badge badge--info">z kartą</span><span class="badge badge--special">limit 6 szt.</span><span class="badge badge--neutral">obniżka</span></div>
+    <div class="row"><span class="lbl">pill</span><span class="badge badge--pill badge--neutral">500 g</span><span class="badge badge--pill badge--warn">przy zakupie 2 szt.</span><span class="badge badge--pill badge--info">z kartą lub aplikacją</span><span class="badge badge--pill badge--promo">najtaniej</span></div></section>
+
+  <section><h2>Banner i Card</h2><p class="lead">Baner mówi jedną rzecz i daje jedną akcję. Karta grupuje treść.</p>
+    <div class="row" style="max-width:600px"><button class="banner"><span class="banner__icon">🏷️</span><span class="banner__text">Najtaniej dziś w Biedronce<small>−48,84 zł na 4 z 5 produktów z listy</small></span><span class="banner__action">Porównaj<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></button></div>
+    <div class="card" style="max-width:600px;padding:var(--s-5)"><b>Karta</b><p style="margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm)">Szare tło, promień --r-lg. Grupuje elementy, które należą do siebie.</p></div></section>
+
+  <section><h2>Offer</h2><p class="lead">Jedna oferta z gazetki: kafelek i pierwsza linia nazwy na jednej osi, warunki w jednym rzędzie (najpierw warunki, potem waga), jedna linia ceny, akcja na pełną szerokość. Każda informacja raz.</p>
+    <div style="max-width:420px;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden">
+      <div class="offer"><span class="offer__media" style="--tile:var(--t-wedliny)">🌭</span><div class="offer__body"><b class="offer__name">Parówki z szynki Kraina Wędlin Mega Paka</b><span class="terms"><span class="badge badge--pill badge--warn">przy zakupie 2 szt.</span><span class="badge badge--pill badge--info">z kartą lub aplikacją</span><span class="badge badge--pill badge--neutral">500 g</span></span><span class="offer__price"><span class="badge badge--promo">−39%</span><b>6,69 zł</b><s>10,99 zł</s></span></div><div class="offer__action"><button class="btn btn--secondary btn--block">Zamień na ten produkt</button></div></div></div></section>
+
+  <section><h2>Offer: kafel i wiersz</h2><p class="lead">Ta sama oferta w gazetce: <b>kafel</b> (2 kolumny, domyślnie) albo <b>wiersz</b> (lista). Zdjęcie na białym tle, gdy jest; bez zdjęcia kafelek działu z ikoną. Rabat na zdjęciu, potem cena, nazwa w 2 liniach, warunki i gramatura w jednym rzędzie. Cały kafel dodaje do listy, na liście = ptaszek i obrys.</p>
+    <div class="offers offers--grid" style="max-width:420px">
+      <button class="offer offer--card" type="button"><span class="offer__media" style="--tile:var(--t-nabial)">🧈<span class="badge badge--promo">−50%</span></span><span class="offer__add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="offer__price"><b>2,49 zł</b><s>4,99 zł</s></span><b class="offer__name">Masło ekstra 83% Pilos</b><span class="terms"><span class="badge badge--pill badge--warn">przy 3 szt.</span><span class="badge badge--pill badge--info">z aplikacją</span><span class="badge badge--pill badge--neutral">200 g</span></span></button>
+      <button class="offer offer--card is-in" type="button"><span class="offer__media offer__media--photo"><img alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Crect x='3' y='1' width='4' height='8' rx='1' fill='%23cce7f4'/%3E%3C/svg%3E"></span><span class="offer__add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="offer__price"><b>1,99 zł</b></span><b class="offer__name">Mleko zambrowskie UHT 3,2%</b><span class="terms"><span class="badge badge--pill badge--neutral">1 L</span></span></button>
+    </div>
+    <div style="max-width:420px;margin-top:var(--s-5)">
+      <button class="offer offer--row" type="button"><span class="offer__media" style="--tile:var(--t-warzywa)">🥑</span><span class="offer__body"><b class="offer__name">Awokado zielone</b><span class="terms"><span class="badge badge--pill badge--warn">1+1 gratis</span><span class="badge badge--pill badge--neutral">1 szt.</span></span></span><span class="offer__side"><span class="badge badge--promo">−50%</span><b>2,99 zł</b><s>5,99 zł</s></span><span class="offer__add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></button>
+    </div></section>
+  <section><h2>Skeleton</h2><p class="lead">Kształt tego, co się wczytuje, zamiast kręciołka: linia (tekst), blok (zdjęcie), cena, okrąg. Jeden połysk dla wszystkich; bez ruchu, gdy system prosi o mniej animacji.</p>
+    <div class="offers offers--grid" style="max-width:420px"><div class="offer offer--card is-loading"><span class="skel skel--block"></span><span class="skel skel--price" style="margin:12px 4px 0"></span><span class="skel skel--text" style="margin:8px 4px 0;width:85%"></span><span class="skel skel--line" style="margin:6px 4px 0;width:50%"></span></div><div class="offer offer--card is-loading"><span class="skel skel--block"></span><span class="skel skel--price" style="margin:12px 4px 0"></span><span class="skel skel--text" style="margin:8px 4px 0;width:70%"></span><span class="skel skel--line" style="margin:6px 4px 0;width:40%"></span></div></div></section>
+  <section><h2>Segmented</h2><p class="lead">Jeden z kilku widoków tego samego (kafle / lista) albo jedno z kilku miejsc (sklepy). <b>block</b> = na całą szerokość, równe części.</p>
+    <div class="row"><div class="seg seg--icons"><button type="button" aria-pressed="true" aria-label="Kafle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></button><button type="button" aria-pressed="false" aria-label="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></button></div></div>
+    <div class="row" style="max-width:420px"><div class="seg seg--block"><button type="button" aria-selected="true" style="--sc:#0050aa"><i class="dot"></i><span>Lidl</span></button><button type="button" aria-selected="false" style="--sc:#e3000f"><i class="dot"></i><span>Biedronka</span></button><button type="button" aria-selected="false" style="--sc:#e10915"><i class="dot"></i><span>Kaufland</span></button></div></div></section>
+  <section><h2>Tile</h2><p class="lead">Skrót: jedna informacja i jedno wejście. <b>line</b> = lekki (biały, obrys; używany pod listą), save = zielona wartość. Ink, brand, quiet = cięższe warianty.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);max-width:420px;margin-bottom:var(--s-4)"><button class="tile tile--line tile--save"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">Lidl</span><span class="tile__meta">−30,98 zł<small>na 5 z 5 produktów z listy</small></span><span class="tile__go">Porównaj</span></button><button class="tile tile--line"><span class="tile__label">Gazetka</span><span class="tile__title">Lidl</span><span class="tile__meta">38<small>promocji · do −57%</small></span><span class="tile__go">Przeglądaj</span></button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);max-width:420px"><button class="tile tile--ink"><span class="tile__label">Najtaniej dziś</span><span class="tile__title">Biedronka</span><span class="tile__meta">−40,84 zł<small>na 3 z 4 produktów z listy</small></span><span class="tile__go">Porównaj sklepy ›</span></button><button class="tile tile--brand"><span class="tile__label">Gazetka</span><span class="tile__title">Lidl</span><span class="tile__meta">38<small>promocji · do −57%</small></span><span class="tile__go">Przeglądaj ›</span></button></div></section>
+
+  <section><h2>Switcher</h2><p class="lead">Jeden wybór z kilku w pigułce ‹ nazwa ›. Strzałki albo przeciągnięcie palcem (gumka, sprężyna) zmieniają opcję, dotknięcie nazwy rozwija listę (pigułka rośnie w panel). Zachowanie: <code>ds/switcher.js</code>, przeniesione z pigułki wariantów w labie.</p>
+    <div class="swhost" style="position:relative;display:flex;padding-top:14px;min-height:280px"><div class="switcher" id="demoSw"><button class="sw-arrow" id="dP" aria-label="Poprzedni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button><span class="sw-name" id="dN"></span><button class="sw-arrow" id="dX" aria-label="Następny"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button></div></div></section>
+  <script type="module">
+    import { switcher } from '/ds/switcher.js';
+    const S = [['Lidl', '#0050aa'], ['Biedronka', '#e30613'], ['Kaufland', '#e30613']]; let i = 0; const n = document.getElementById('dN');
+    const paint = () => { n.style.setProperty('--sc', S[i][1]); n.innerHTML = '<i class="dot"></i>' + S[i][0] + (i === 1 ? '<span class="badge badge--promo badge--pill flag">najtaniej</span>' : ''); }; paint();
+    switcher(document.getElementById('demoSw'), { prev: document.getElementById('dP'), next: document.getElementById('dX'), name: n, onStep: d => { i = (i + d + S.length) % S.length; paint(); },
+      items: () => S.map((s, k) => ({ id: k, selected: k === i, html: '<span class="sw-o" style="--sc:' + s[1] + '"><i class="dot"></i>' + s[0] + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' })),
+      onPick: k => { i = k; paint(); } });
+  </script>
+
+  <section><h2>Switch i Input</h2><p class="lead">Przełącznik (np. „Moje sklepy”) i pole tekstowe.</p>
+    <div class="row"><label style="display:flex;align-items:center;gap:12px"><input type="checkbox" checked style="position:absolute;opacity:0"><b class="switch"></b> Lidl</label><label style="display:flex;align-items:center;gap:12px"><input type="checkbox" style="position:absolute;opacity:0"><b class="switch"></b> Auchan</label></div>
+    <div class="row" style="max-width:420px"><input class="input" placeholder="Wpisz produkt, np. mleko 2 litry"></div></section>
+</div>
+<script>
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const COLORS = [['--bg', 'tło'], ['--soft', 'tło 2'], ['--line', 'linia'], ['--ink', 'tekst'], ['--muted', 'tekst 2'], ['--cta', 'akcja główna'], ['--promo', 'promocja'], ['--aqua', 'podświetlenie'], ['--markBg', 'tło wyróżnienia'], ['--markInk', 'tekst wyróżnienia'], ['--mint', 'pozytywne tło'], ['--danger', 'nieodwracalne'], ['--warnBg', 'kilka sztuk'], ['--infoBg', 'karta / aplikacja'], ['--specialBg', 'limit']];
+  const paint = () => {
+    document.getElementById('colors').innerHTML = COLORS.map(([v, n]) => `<div class="sw"><i style="background:var(${v})"></i><b>${n}</b><small>${v} · ${css(v)}</small></div>`).join('');
+    document.getElementById('radii').innerHTML = ['xs', 'sm', 'md', 'lg', 'xl', 'full'].map(r => `<div class="rad"><i style="border-radius:var(--r-${r})"></i><small>--r-${r}</small></div>`).join('');
+    document.getElementById('spaces').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `<div class="sp" style="width:calc(var(--s-${i}) + 24px)"><i style="width:var(--s-${i})"></i><small>--s-${i} ${css('--s-' + i)}</small></div>`).join('');
+    document.getElementById('type').innerHTML = [['--fs-hero', 'Do kupienia', 650], ['--fs-2xl', 'Nagłówek 2xl', 650], ['--fs-xl', 'Tytuł arkusza', 650], ['--fs-lg', 'Nazwa produktu', 600], ['--fs-md', 'Tekst podstawowy', 500], ['--fs-sm', 'Tekst pomocniczy', 500], ['--fs-xs', 'Etykieta', 600], ['--fs-2xs', 'NAGŁÓWEK SEKCJI', 650]].map(([v, t, w]) => `<div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px"><span class="lbl">${v}</span><span style="font-size:var(${v});font-weight:${w};letter-spacing:${v === '--fs-hero' ? '-.045em' : '-.01em'};line-height:1.1">${t}</span></div>`).join('');
+  };
+  paint();
+  document.getElementById('theme').onclick = e => { const d = document.documentElement.classList.toggle('dark'); document.body.style.background = 'var(--bg)'; e.target.textContent = d ? 'Jasny motyw' : 'Ciemny motyw'; paint(); };
+</script>
+</body>
+</html>

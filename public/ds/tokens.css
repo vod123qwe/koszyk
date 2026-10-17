@@ -1,0 +1,51 @@
+/* Koszyk DS: tokeny. Jedno źródło wartości dla całej apki: kolory (jasny i ciemny), zaokrąglenia, odstępy, typografia,
+   wysokości kontrolek, cienie i ruch. Komponenty (ds/components.css) i widoki (app.css) biorą wartości WYŁĄCZNIE stąd. */
+:root {
+  /* ---- color: surfaces and text ---- */
+  --bg: #ffffff; --soft: #f4f4f8; --card: #ffffff; --line: #e8e8ef;
+  --ink: #29293d; --muted: #84849a; --faint: #c3c3d1;
+  /* ---- color: roles ---- */
+  --cta: #0e4f47; --ctaInk: #ffffff;                 /* primary action: mic, send, confirm */
+  --promo: #23a15f; --promoInk: #ffffff;             /* a discount */
+  --aqua: #60d7d6; --mint: #ddf0ea;                  /* highlight, positive surface */
+  --check: var(--cta); --pencil: #3b3b4a;
+  --danger: #e5484d; --dangerInk: #ffffff;
+  --warnBg: #ffe3a3; --warnInk: #6b4500;             /* condition: buy several */
+  --infoBg: #d6e7ff; --infoInk: #173f80;             /* condition: card or app */
+  --specialBg: #f6e8ff; --specialInk: #6b2d91;       /* condition: limits */
+  --neutralBg: color-mix(in srgb, var(--ink) 7%, var(--bg)); --neutralInk: var(--muted);
+  --scrim: rgba(17,17,22,.32);
+  --skel: color-mix(in srgb, var(--ink) 7%, var(--bg)); --skelHi: color-mix(in srgb, var(--bg) 70%, transparent);   /* a skeleton and its passing light */
+  --photo: #ffffff;                                  /* behind product photos: they are shot on white, in both themes */
+  --markBg: #0e4f47; --markInk: #a6f5c6;              /* the highlight behind the count in the heading */
+  --tileInk: #29293d; --tileInkOn: #ffffff;           /* a dark solid surface ("Najtaniej dziś") */
+  /* aisle tiles */
+  --t-warzywa: #d5f2d4; --t-pieczywo: #feecd6; --t-nabial: #cce7f4; --t-mieso: #fedfda; --t-wedliny: #fff2bb; --t-mrozonki: #c1e8e7; --t-suche: #feecd6; --t-konserwy: #ece3f6;
+  --t-przyprawy: #fedfda; --t-sniadanie: #f9e2f4; --t-kawa: #efe4dc; --t-napoje: #cce7f4; --t-alkohol: #f9e2f4; --t-chemia: #c1e8e7; --t-higiena: #dfe8fb; --t-dziecko: #fff2bb; --t-zwierzeta: #feecd6; --t-dom: #eeeef6;
+
+  /* ---- radius ---- */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 24px; --r-full: 999px;
+  /* ---- space (4-pt) ---- */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-7: 32px; --s-8: 40px; --s-9: 56px;
+  /* ---- type ---- */
+  --font: "Onest", "Geist", system-ui, sans-serif;
+  --fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13.5px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 28px; --fs-hero: clamp(38px, 10.5vw, 58px);
+  --fw-regular: 450; --fw-medium: 550; --fw-semibold: 650; --fw-bold: 700;
+  /* ---- control heights ---- */
+  --h-sm: 34px; --h-md: 42px; --h-lg: 52px; --h-xl: 60px;
+  /* ---- elevation ---- */
+  --shadow-1: 0 1px 3px rgba(41,41,61,.12); --shadow-2: 0 6px 16px -10px rgba(41,41,61,.35); --shadow-3: 0 18px 50px rgba(41,41,61,.14);
+  /* ---- motion ---- */
+  --ease: cubic-bezier(.22,.8,.26,1); --dur-1: .15s; --dur-2: .25s; --dur-3: .42s;
+  /* ---- layout ---- */
+  --w: 640px; --gutter: 20px; --safeB: env(safe-area-inset-bottom);
+}
+:root.dark {
+  --bg: #111116; --soft: #1b1b23; --card: #16161c; --line: #24242f;
+  --ink: #f1f1f6; --muted: #8e8ea3; --faint: #4b4b5c;
+  --cta: #3cc28c; --ctaInk: #08241c; --pencil: #d9d9e6; --mint: #14302a; --tileInk: #24243a; --tileInkOn: #f1f1f6; --markBg: #135c4f; --markInk: #b4f9d1;
+  --warnBg: #4a370c; --warnInk: #ffd27a; --infoBg: #172c4d; --infoInk: #a8c8ff; --specialBg: #2d1a3a; --specialInk: #d3a4f2;
+  --shadow-1: 0 1px 3px rgba(0,0,0,.5); --shadow-2: 0 6px 16px -10px rgba(0,0,0,.8); --shadow-3: 0 18px 50px rgba(0,0,0,.5);
+  --t-warzywa: #1d3324; --t-pieczywo: #3a2c1d; --t-nabial: #1b2d3a; --t-mieso: #3a2222; --t-wedliny: #383218; --t-mrozonki: #17313a; --t-suche: #3a2c1d; --t-konserwy: #2c2338;
+  --t-przyprawy: #3a2222; --t-sniadanie: #38223a; --t-kawa: #33281f; --t-napoje: #1b2d3a; --t-alkohol: #38223a; --t-chemia: #17313a; --t-higiena: #1f2a40; --t-dziecko: #383218; --t-zwierzeta: #3a2c1d; --t-dom: #23232d;
+}

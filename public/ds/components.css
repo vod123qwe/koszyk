@@ -1,0 +1,272 @@
+/* Koszyk DS: komponenty. Każdy element interfejsu, który się powtarza, ma tu jedną definicję zbudowaną z tokenów.
+   Zmiana tutaj = zmiana wszędzie. Nowy element: najpierw komponent i jego wariant, potem użycie w widoku. Podgląd: /ds.html */
+
+/* ---------- Button: text action. Variants: primary (main action), secondary (outlined), ghost, danger. Sizes: sm, md, lg. ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-full);
+  font-size: var(--fs-md); font-weight: var(--fw-semibold); white-space: nowrap; transition: background var(--dur-2), box-shadow var(--dur-2), transform var(--dur-1) var(--ease), color var(--dur-2); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn:active { transform: scale(.97); }
+.btn:focus-visible, .ibtn:focus-visible, .chip:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+.btn--primary { background: var(--cta); color: var(--ctaInk); }
+.btn--secondary { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+@media (hover: hover) { .btn--secondary:hover, .ibtn--secondary:hover { background: var(--soft); } }
+.btn--ghost { color: var(--cta); padding: 0 var(--s-2); } :root.dark .btn--ghost { color: var(--cta); }
+.btn--danger { background: var(--danger); color: var(--dangerInk); }
+.btn--soft { background: var(--soft); color: var(--ink); }
+.btn--sm { height: var(--h-sm); padding: 0 var(--s-3); font-size: var(--fs-sm); } .btn--sm svg { width: 16px; height: 16px; }
+.btn--lg { height: var(--h-lg); padding: 0 var(--s-5); font-size: 16px; border-radius: var(--r-md); }
+.btn--block { display: flex; width: 100%; }
+
+/* ---------- Icon button: round, one icon. Same variants as Button. Sizes: sm 34, md 42, lg 52, xl 60. ---------- */
+.ibtn { position: relative; display: inline-grid; place-items: center; flex: none; width: var(--h-md); height: var(--h-md); border-radius: var(--r-full);
+  transition: background var(--dur-2), box-shadow var(--dur-2), transform var(--dur-1) var(--ease); }
+.ibtn svg { width: 20px; height: 20px; }
+.ibtn:active { transform: scale(.94); }
+.ibtn--primary { background: var(--cta); color: var(--ctaInk); }
+.ibtn--secondary { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+.ibtn--soft { background: var(--soft); color: var(--muted); }
+.ibtn--sm { width: var(--h-sm); height: var(--h-sm); } .ibtn--sm svg { width: 16px; height: 16px; }
+.ibtn--lg { width: var(--h-lg); height: var(--h-lg); }
+.ibtn--xl { width: var(--h-xl); height: var(--h-xl); } .ibtn--xl svg { width: 25px; height: 25px; }
+/* a dot on an icon button: offline, news */
+.ibtn.dot::after { content: ''; position: absolute; right: 1px; top: 1px; width: 9px; height: 9px; border-radius: 50%; background: #e0662f; box-shadow: 0 0 0 2px var(--bg); }
+
+/* ---------- Chip: a selectable pill (shops, aisles, filters). States: default, on. Optional colour dot (--sc) or tile (--tile). ---------- */
+.chip { position: relative; flex: none; display: inline-flex; align-items: center; gap: var(--s-2); height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-full);
+  background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--ink); white-space: nowrap;
+  transition: background var(--dur-2), box-shadow var(--dur-2), color var(--dur-2), transform var(--dur-1) var(--ease); }
+.chip:active { transform: scale(.96); }
+@media (hover: hover) { .chip:hover { background: var(--soft); } }
+.chip small { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); opacity: .6; }
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sc, var(--faint)); flex: none; }
+.chip--on, .chip--on:hover { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
+.chip--on .dot { box-shadow: 0 0 0 2px var(--ctaInk); }
+.chip .flag { box-shadow: 0 0 0 2px var(--bg); }
+.chip--tile { background: var(--tile, var(--soft)); box-shadow: none; }
+.chip--sm { height: var(--h-sm); padding: 0 var(--s-3); font-size: 13px; }
+/* a tag riding on the top edge of a chip ("najtaniej") */
+.chip .flag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); }
+
+/* ---------- Badge: a small label. Variants: promo (discount), warn (buy several), info (card/app), special (limits), neutral. ---------- */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--r-xs); font-size: var(--fs-2xs); font-weight: var(--fw-bold); line-height: 1.35; white-space: nowrap; }
+.badge--promo { background: var(--promo); color: var(--promoInk); font-size: var(--fs-xs); }
+.badge--warn { background: var(--warnBg); color: var(--warnInk); }
+.badge--info { background: var(--infoBg); color: var(--infoInk); }
+.badge--special { background: var(--specialBg); color: var(--specialInk); }
+.badge--neutral { background: var(--neutralBg); color: var(--neutralInk); font-weight: var(--fw-semibold); }
+.badge--pill { border-radius: var(--r-full); padding: 1px 8px; }
+.badges { display: inline-flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
+
+/* ---------- Card: a grouped surface. Banner: a slim card that tells one thing and offers one action. ---------- */
+.card { border-radius: var(--r-lg); background: var(--soft); }
+.banner { display: flex; align-items: center; gap: var(--s-3); width: 100%; padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3); border-radius: var(--r-md); background: var(--mint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--promo) 22%, transparent); text-align: left; color: var(--ink); }
+.banner .banner__icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--bg); font-size: 20px; }
+.banner .banner__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.banner .banner__text small { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--muted); }
+.banner .banner__action { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--cta); }
+.banner .banner__action svg { width: 15px; height: 15px; }
+
+/* ---------- Switch ---------- */
+.switch { position: relative; width: 44px; height: 26px; flex: none; border-radius: var(--r-full); background: var(--line); transition: background var(--dur-2); }
+.switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .3s var(--ease); }
+input:checked + .switch { background: var(--cta); } input:checked + .switch::after { transform: translateX(18px); }
+input:focus-visible + .switch { outline: 2px solid var(--aqua); outline-offset: 2px; }
+
+/* ---------- Input: a text field ---------- */
+.input { width: 100%; min-width: 0; height: var(--h-lg); padding: 0 var(--s-4); border: 0; border-radius: var(--r-full); background: var(--soft); font: inherit; font-size: 16px; color: var(--ink); outline: none; transition: box-shadow var(--dur-2); }
+.input:focus { box-shadow: inset 0 0 0 1.6px var(--cta); }
+.input::placeholder { color: var(--muted); }
+
+/* ---------- Tile: a square shortcut with one fact and one way in. Variants: ink (dark, solid), brand (our green), quiet. ---------- */
+.tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); aspect-ratio: 1 / 1; min-width: 0; padding: var(--s-5); border-radius: var(--r-lg); text-align: left; overflow: hidden;
+  transition: transform var(--dur-1) var(--ease), filter var(--dur-2); }
+.tile:active { transform: scale(.98); }
+.tile__label { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.tile__title { font-size: var(--fs-2xl); font-weight: var(--fw-semibold); letter-spacing: -.03em; line-height: 1.05; }
+.tile__meta { margin-top: auto; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: -.02em; }
+.tile__meta small { font-size: var(--fs-sm); font-weight: var(--fw-medium); letter-spacing: 0; opacity: .75; line-height: 1.35; }
+.tile__go { display: inline-flex; align-items: center; gap: 2px; margin-top: var(--s-3); font-size: var(--fs-sm); font-weight: var(--fw-semibold); } .tile__go svg { width: 15px; height: 15px; }
+.tile--ink { background: var(--tileInk); color: var(--tileInkOn); } .tile--ink .tile__meta { color: var(--aqua); }
+.tile--brand { background: var(--cta); color: var(--ctaInk); }
+.tile--quiet { background: var(--soft); color: var(--muted); }
+.tile:disabled { opacity: .6; }
+@media (hover: hover) { button.tile:hover { filter: brightness(1.06); } }
+
+/* ---------- Offer: one offer from a leaflet. Media and the first line of the name share a centre line; terms in one row;
+   one price line; an optional full-width action. Flat = no padding or line (inside another block). ---------- */
+.offer { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: var(--s-4); row-gap: var(--s-4); padding: var(--s-6) var(--s-5); border-bottom: 1px solid var(--line); }
+.offer--flat { padding: 0; border: 0; }
+.offer__media { width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--r-md); background: var(--tile, var(--soft)); font-size: 24px; }
+.offer__body { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.offer__name { min-height: 48px; display: flex; align-items: center; font-size: var(--fs-md); font-weight: var(--fw-semibold); line-height: 1.3; letter-spacing: -.005em; }
+.offer__meta { margin-top: -6px; font-size: var(--fs-xs); color: var(--muted); }
+.offer .terms { margin: 0; }
+.offer__price { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); margin-top: 2px; }
+.offer__price b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; } .offer__price b small { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--muted); }
+.offer__price s { font-size: var(--fs-sm); color: var(--muted); white-space: nowrap; }
+.offer__action { grid-column: 1 / -1; }
+.offers { border-top: 1px solid var(--line); }
+
+/* Tile, v2: the same rhythm in every tile (label · title · value · caption · button), the button a full-width bar at the bottom */
+.tile { gap: 0; padding: var(--s-4); }
+.tile__label { margin-bottom: 6px; }
+.tile__title { font-size: clamp(20px, 6vw, 26px); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 100%; }
+.tile__meta { margin-top: auto; gap: 3px; font-size: clamp(18px, 5.4vw, 22px); }
+.tile__meta small { min-height: calc(2 * 1.35em); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-xs); }
+.tile__go { justify-content: center; width: 100%; height: 40px; margin-top: var(--s-3); border-radius: var(--r-full); background: rgba(255,255,255,.14); font-size: var(--fs-sm); transition: background var(--dur-2); }
+.tile--brand .tile__go { background: rgba(255,255,255,.18); } :root.dark .tile--brand .tile__go { background: rgba(0,0,0,.14); }
+.tile--quiet .tile__go { background: var(--bg); }
+@media (hover: hover) { button.tile:hover .tile__go { background: rgba(255,255,255,.24); } }
+/* Tile, v2.1: square by default, taller when the content needs it (never clipped); calmer type on phones */
+.tile { overflow: visible; }
+.tile__title { font-size: clamp(20px, 5.6vw, 26px); line-height: 1.12; padding-bottom: 2px; }
+.tile__meta { margin-top: auto; padding-top: var(--s-3); font-size: clamp(18px, 5vw, 22px); }
+
+/* Tile art: a soft 3D object in the top-right corner, nudging out of the edge; the title keeps clear of it */
+.tile--art .tile__art { position: absolute; top: -14px; right: -8px; width: clamp(72px, 24vw, 104px); height: auto; pointer-events: none; filter: drop-shadow(0 8px 14px rgba(0,0,0,.18)); animation: tileFloat 6s ease-in-out infinite; }
+.tile--art:nth-child(2) .tile__art { animation-delay: -3s; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(56px, 18vw, 84px)); }
+@keyframes tileFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-4px) rotate(-2deg); } }
+@media (prefers-reduced-motion: reduce) { .tile--art .tile__art { animation: none; } }
+@media (hover: hover) { button.tile--art:hover .tile__art { transform: translateY(-6px) rotate(-4deg) scale(1.04); transition: transform .4s var(--ease); animation-play-state: paused; } }
+/* Tile, v3: the number is the hero. Label and shop name sit small beside the art; the value is big and full width. */
+.tile__title { font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: -.01em; margin-top: 2px; }
+.tile__meta { font-size: clamp(28px, 8.2vw, 42px); font-weight: var(--fw-bold); letter-spacing: -.035em; line-height: 1; gap: 6px; }
+.tile__meta small { letter-spacing: 0; line-height: 1.35; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(52px, 16vw, 84px)); }
+@media (max-width: 420px) { .tile--art .tile__art { width: 70px; top: -12px; right: -6px; } }
+
+/* Tile art, flat: solid token colours, no gradient, sheen or shadow; it bleeds off the top-right corner, cropped by the tile's rounding */
+.tile__artbox { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.tile--art .tile__art { top: -18px; right: -20px; width: clamp(96px, 30vw, 128px); filter: none; animation: tileFloat 7s ease-in-out infinite; }
+@media (max-width: 420px) { .tile--art .tile__art { width: 92px; top: -16px; right: -18px; } }
+@keyframes tileFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(3px) rotate(-1.5deg); } }
+.tile__art text { font-family: var(--font); font-weight: 800; font-size: 24px; }
+.tile--ink .a-soft { fill: color-mix(in srgb, var(--aqua) 18%, transparent); } .tile--ink .a-main { fill: var(--aqua); } .tile--ink .a-hole { fill: var(--tileInk); } .tile--ink .a-mark { fill: var(--tileInk); }
+.tile--brand .a-soft { fill: color-mix(in srgb, var(--markInk) 40%, transparent); } .tile--brand .a-paper { fill: #ffffff; } .tile--brand .a-line { fill: color-mix(in srgb, var(--markInk) 70%, #ffffff); }
+.tile--brand .a-main { fill: var(--markInk); } .tile--brand .a-mark { fill: var(--cta); font-size: 20px; }
+:root.dark .tile--brand .a-paper { fill: #eafaf2; } :root.dark .tile--brand .a-mark { fill: #0e4f47; }
+.tile--art .tile__label, .tile--art .tile__title { max-width: calc(100% - clamp(64px, 20vw, 96px)); }
+@media (max-width: 420px) {
+  .tile--art .tile__art { width: 78px; top: -18px; right: -18px; }
+  .tile--art .tile__label { max-width: calc(100% - 46px); letter-spacing: .04em; }
+  .tile--art .tile__title { max-width: calc(100% - 50px); }
+}
+
+/* ---------- Switcher: ‹ name › in a pill; swipe or arrows step, a tap on the name grows the pill into the list (ds/switcher.js) ---------- */
+.switcher { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 2px; height: var(--h-lg); padding: 0 4px; border-radius: var(--r-full);
+  background: var(--bg); box-shadow: inset 0 0 0 1.4px var(--line), var(--shadow-1); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.switcher.dragging { cursor: grabbing; }
+.sw-arrow { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); transition: background var(--dur-2), color var(--dur-2); }
+.sw-arrow:first-child svg { transform: rotate(180deg); } .sw-arrow svg { width: 18px; height: 18px; }
+@media (hover: hover) { .sw-arrow:hover { background: var(--soft); color: var(--ink); } }
+.sw-name { position: relative; display: inline-flex; align-items: center; gap: 9px; min-width: 110px; justify-content: center; padding: 8px 12px; border-radius: var(--r-full); font-size: var(--fs-md); font-weight: var(--fw-semibold); cursor: pointer; white-space: nowrap; }
+@media (hover: hover) { .sw-name:hover { background: var(--soft); } }
+.sw-name:focus-visible { outline: 2px solid var(--aqua); outline-offset: 1px; }
+.sw-name .dot, .sw-o .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sc, var(--faint)); flex: none; }
+.sw-name .flag { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 0 2px var(--bg); }
+.switcher.open { box-shadow: none; background: transparent; }
+.sw-menu { position: absolute; z-index: 1; background: var(--bg); color: var(--ink); border-radius: 22px; box-shadow: var(--shadow-3), inset 0 0 0 1px var(--line); overflow: hidden; }
+.sw-list { display: flex; flex-direction: column; padding: 0 6px 8px; max-height: 100%; overflow: auto; scrollbar-width: none; }
+.sw-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 52px; flex: none; padding: 0 14px; border-radius: 14px; font-size: var(--fs-md); font-weight: var(--fw-semibold); text-align: left; }
+.sw-opt:hover, .sw-opt:focus-visible { background: var(--soft); outline: none; }
+.sw-o { display: inline-flex; align-items: center; gap: 10px; } .sw-o svg { width: 16px; height: 16px; color: var(--muted); }
+.sw-opt small { margin-left: auto; font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--promo); }
+.sw-opt > svg { width: 16px; height: 16px; flex: none; opacity: 0; color: var(--cta); } .sw-opt[aria-selected=true] > svg { opacity: 1; }
+.sw-foot { margin-top: 4px; color: var(--muted); border-top: 1px solid var(--line); border-radius: 0 0 14px 14px; }
+.sw-opt small { white-space: nowrap; }
+/* Tile, v4: no corner art; more room inside */
+.tile { padding: var(--s-6) var(--s-5) var(--s-5); }
+.tile__go { margin-top: var(--s-4); }
+@media (max-width: 420px) { .tile { padding: var(--s-5) var(--s-4) var(--s-4); } }
+/* Switcher, v2: outline only, no shadow; full width when it sits in a row of its own (.switcher--block) */
+.switcher { box-shadow: inset 0 0 0 1.4px var(--line); }
+.switcher--block { display: flex; width: 100%; justify-content: space-between; }
+.switcher--block .sw-name { flex: 1; }
+.sw-menu { box-shadow: var(--shadow-2), inset 0 0 0 1.4px var(--line); }
+
+/* ---------- Tile, line: the light one. White, a thin outline, ink text; the value carries the colour (tile--save: green). Not square ---------- */
+.tile--line { aspect-ratio: auto; min-height: 168px; background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+.tile--line .tile__label { color: var(--muted); opacity: 1; }
+.tile--line .tile__meta { font-size: clamp(24px, 7vw, 32px); }
+.tile--line .tile__meta small { color: var(--muted); opacity: 1; }
+.tile--line.tile--save .tile__meta { color: var(--cta); } :root.dark .tile--line.tile--save .tile__meta { color: #8fe0b8; }
+.tile--line.tile--quiet .tile__meta, .tile--line.tile--quiet .tile__title { color: var(--muted); }
+.tile--line .tile__go, .tile--line.tile--quiet .tile__go { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line); }
+@media (hover: hover) { button.tile--line:hover { filter: none; background: var(--soft); } button.tile--line:hover .tile__go { background: var(--bg); } }
+
+/* ---------- Skeleton: the shape of what is coming, shown while it loads (never a spinner). One shimmer for all;
+   shapes: line (text), block (photo, price), round. Still when the user asks for less motion. ---------- */
+.skel { display: block; border-radius: var(--r-xs); background: var(--skel) linear-gradient(100deg, transparent 30%, var(--skelHi) 50%, transparent 70%) 0 0 / 220% 100% no-repeat;
+  animation: skel 1.3s linear infinite; }
+.skel--line { height: 12px; } .skel--text { height: 15px; } .skel--price { height: 20px; width: 64px; border-radius: var(--r-xs); }
+.skel--block { width: 100%; aspect-ratio: 1; border-radius: var(--r-md); } .skel--round { border-radius: var(--r-full); }
+@keyframes skel { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+.is-loading { pointer-events: none; }
+
+/* ---------- Segmented: one of a few ways to look at the same thing (tiles / list) or one of a few places (shops).
+   block = full width, equal parts. ---------- */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-full); background: var(--soft); }
+.seg > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 38px; height: 34px; padding: 0 var(--s-3); border-radius: var(--r-full);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); white-space: nowrap; transition: background var(--dur-2), color var(--dur-2), box-shadow var(--dur-2); }
+.seg > button svg { width: 18px; height: 18px; flex: none; }
+.seg > button small { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); opacity: .8; }
+.seg > button .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc, var(--muted)); }
+.seg > button[aria-pressed=true], .seg > button[aria-selected=true] { background: var(--bg); color: var(--ink); box-shadow: var(--shadow-1); }
+.seg > button:focus-visible { outline: 2px solid var(--aqua); outline-offset: 1px; }
+.seg--block { display: flex; width: 100%; } .seg--block > button { flex: 1; min-width: 0; padding: 0 var(--s-2); }
+.seg--block > button span { overflow: hidden; text-overflow: ellipsis; }
+.seg--icons > button { padding: 0; width: 38px; }
+
+/* ---------- Offer, card: one offer in a 2-column leaflet. Photo (on white) or the aisle tile with its icon on top,
+   the discount on the photo, then price, name (2 lines), size and terms. The whole card adds it; on the list = a check. ---------- */
+.offers--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); border: 0; }
+.offer--card { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0; min-width: 0; padding: var(--s-2) var(--s-2) var(--s-3); border: 0;
+  border-radius: var(--r-lg); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); text-align: left; transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-2); }
+.offer--card:active { transform: scale(.98); }
+.offer--card .offer__media { position: relative; width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--r-md); font-size: 46px; overflow: hidden; }
+.offer__media img { width: 100%; height: 100%; object-fit: contain; }
+.offer__media--photo { background: var(--photo); padding: var(--s-2); }
+.offer--card .offer__media .badge { position: absolute; left: var(--s-2); top: var(--s-2); }
+.offer--card .offer__price { margin: var(--s-3) var(--s-1) 0; gap: 6px; } .offer--card .offer__price b { font-size: var(--fs-lg); }
+.offer--card .offer__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 0; margin: 2px var(--s-1) 0;
+  font-size: var(--fs-sm); line-height: 1.3; }
+.offer--card .offer__meta { margin: 3px var(--s-1) 0; }
+.offer.offer--card .terms { display: flex; flex-wrap: wrap; gap: 4px; margin: var(--s-2) var(--s-1) 0; }
+.offer__add { position: absolute; right: var(--s-3); top: var(--s-3); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--bg); color: var(--cta); box-shadow: var(--shadow-1); transition: background var(--dur-2), color var(--dur-2); }
+.offer__add svg { width: 18px; height: 18px; }
+.offer--card .offer__add { top: calc(var(--s-2) + var(--s-2)); right: calc(var(--s-2) + var(--s-2)); }
+.offer.is-in .offer__add { background: var(--cta); color: var(--ctaInk); box-shadow: none; }
+.offer.is-in { box-shadow: inset 0 0 0 1.6px var(--cta); }
+@media (hover: hover) { .offer--card:hover { box-shadow: inset 0 0 0 1px var(--faint); } }
+
+/* ---------- Offer, row: the same offer as one line (the list view of a leaflet): media, name with size and terms, price, add. ---------- */
+.offer--row { position: relative; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; column-gap: var(--s-3); padding: var(--s-3) var(--s-2) var(--s-3) 0;
+  width: 100%; text-align: left; border-bottom: 1px solid var(--line); }
+.offer--row .offer__media { width: 56px; height: 56px; font-size: 26px; position: relative; }
+.offer--row .offer__media--photo { padding: 4px; }
+.offer--row .offer__name { min-height: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-md); }
+.offer--row .offer__body { gap: 4px; }
+.offer--row .offer__meta { margin: 0; }
+.offer.offer--row .terms { display: flex; flex-wrap: wrap; gap: 4px; }
+.offer--row .offer__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-right: 44px; }
+.offer--row .offer__side b { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--cta); white-space: nowrap; }
+.offer--row .offer__side s { font-size: var(--fs-xs); color: var(--muted); }
+.offer--row .offer__add { top: 50%; right: 0; transform: translateY(-50%); box-shadow: inset 0 0 0 1.4px var(--line); }
+.offer--row.is-in { box-shadow: none; }
+
+/* skeletons inside components: the same boxes as the real thing */
+.offer--card.is-loading .skel--price { margin: var(--s-3) var(--s-1) 0; }
+.offer--card.is-loading .skel--text { margin: var(--s-2) var(--s-1) 0; width: 85%; }
+.offer--card.is-loading .skel--line { margin: var(--s-2) var(--s-1) 0; width: 45%; }
+.offer--row.is-loading .skel--block { width: 56px; height: 56px; aspect-ratio: auto; }
+.offer--row.is-loading .skel--text { width: 72%; } .offer--row.is-loading .skel--line { width: 40%; }
+.offer--row.is-loading .skel--price { margin-right: 44px; }
+.skel--chip { flex: none; width: 92px; height: var(--h-sm); border-radius: var(--r-full); }
+.banner.is-loading { background: var(--soft); box-shadow: none; }
+.banner.is-loading .skel--round { width: 26px; height: 26px; flex: none; }
+.banner.is-loading .skel--text { flex: 1; max-width: 240px; }
+.tile .skel--price { width: 48px; height: 22px; } .tile .skel--line { width: 80%; margin-top: 6px; }
