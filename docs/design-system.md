@@ -19,13 +19,13 @@ Apka stoi na małym design systemie. Zasada: **elementy są naczyniami połączo
 | Icon button | `ibtn` + te same warianty, rozmiary `--sm` / `--lg` / `--xl`, kropka `dot` | menu, mikrofon, wyślij, dodaj sklep |
 | Chip | `chip`, stan `chip--on`, `chip--tile`, `chip--sm`, kropka sklepu `.dot`, flaga `.flag` | sklepy, działy w promocjach i gazetce, podpowiedzi |
 | Badge | `badge` + `--promo` / `--warn` / `--info` / `--special` / `--neutral`, kształt `--pill` | rabat, warunki promocji, „najtaniej” |
-| Banner | `banner` z `__icon`, `__text`, `__action` | „N produktów taniej” |
+| Banner | `banner` z `__icon`, `__text`, `__action` | (wolny; „N produktów z listy w promocji” jest teraz linijką pod nazwą sklepu w nagłówku) |
 | Tile | `tile` + `--ink` / `--brand` / `--quiet`, części `__label`, `__title`, `__meta`, `__go` | kafle „Najtaniej dziś” i „Gazetka” |
 | Offer | `offer` (+ `--flat`), części `__media`, `__name`, `__meta`, `__price`, `__action`; warunki w `.terms` | zamienniki, rozpiska sklepu, arkusz produktu |
 | Offer: kafel i wiersz | `offer--card` w `offers--grid` (2 kolumny, na szerszym ekranie 3–4), `offer--row` w `offers--rows`; zdjęcie `offer__media--photo` (białe tło `--photo`), przycisk `offer__add`, na liście `is-in` | gazetka (kafle albo lista) |
 | Skeleton | `skel` + `--line` / `--text` / `--price` / `--block` / `--round` / `--chip`; w komponencie stan `is-loading` | gazetka, baner i ceny przy zmianie sklepu, kafel „Gazetka”, promocje na pustej liście |
 | Segmented | `seg` (+ `--block` na całą szerokość, `--icons` same ikony), wybrany `aria-pressed` / `aria-selected` | kafle / lista, sklepy w gazetce |
-| Switcher | `switcher` + `sw-arrow`, `sw-name`; zachowanie `ds/switcher.js` | wybór sklepu u góry |
+| Switcher | `switcher` + `sw-arrow`, `sw-name`; zachowanie `ds/switcher.js` | nazwa sklepu w nagłówku (`ah-sw`, bez strzałek): dotknięcie otwiera listę sklepów, przesunięcie zmienia sklep |
 | Card | `card` | grupowane powierzchnie |
 | Switch | `switch` (po ukrytym checkboxie) | Moje sklepy |
 | Input | `input` | dopisywanie, słownik |
