@@ -40,6 +40,8 @@ const I = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/>',
   back: '<path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M3 3l18 18M10.6 6.1A9.6 9.6 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.7 3.4M6.6 7.6C4 9.3 2.5 12 2.5 12S6 18 12 18c1.6 0 3-.4 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   paper: '<path d="M5 4h11v15a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M16 8h3v11a2 2 0 0 1-2 2M8.5 8h4.5M8.5 11.5h4.5M8.5 15h3"/>',
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
   rows: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
@@ -361,9 +363,11 @@ function emojiGuess(name) { const n = foldPL(name || ''), words = n.split(/[\s,-
   return nonFood ? emojiIn_(n, words, EMO_DOM_) : emojiIn_(n, words, EMO_) || emojiIn_(n, words, EMO_DOM_); }
 const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== 'dom' && looksLikeProduct(it) ? CAT_EMOJI[it.cat] : null);
 function tick(row, it) {
-  if (it.done) { put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
+  if (it.done) { flying = it.id; put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
   if (row.classList.contains('on')) return; row.classList.add('on'); ticking.add(it.id); vib(12);
-  setTimeout(() => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); }, 560); }
+  setTimeout(() => { const fin = () => { ticking.delete(it.id); remember(it); learn(it.cat); put('items', { ...it, done: true, doneAt: Date.now() }); };
+    if (!hideDone) { flying = it.id; return fin(); }
+    row.style.height = row.offsetHeight + 'px'; void row.offsetHeight; row.classList.add('fold'); setTimeout(fin, 300); }, 560); }
 // (each line a touch its own: nearly straight, the slightest rise and dip, seeded by the item)
 function pencil(id) { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const r = k => ((h >>> k) % 100) / 100;
   const y0 = 4.6 + r(1) * .9, y1 = 4 + r(5) * 1.4, y2 = 4.2 + r(9) * 1.2, y3 = 4.4 + r(13) * 1;
@@ -405,6 +409,24 @@ function rowEl(it) {
   const sb = row.querySelector('[data-subs]'); if (sb) sb.onclick = () => subsSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
+// (bought items can be hidden, so only what is still missing stays on the list; remembered per phone)
+let hideDone = false; try { hideDone = localStorage.getItem('koszyk.hideDone') === '1'; } catch { }
+// ---------- moving lines: a bought item flies down to "W koszyku", the rest slide up into its place (FLIP across the rebuild) ----------
+// (positions in page coordinates, so keeping the scroll still between the two measurements does not count as movement)
+let flying = null; const calm = matchMedia('(prefers-reduced-motion: reduce)');
+const flipKey = el => el.dataset.flip || 'r:' + el.dataset.id, flipY = el => el.getBoundingClientRect().top + scrollY;
+function flipSnap(wrap) { const at = new Map(); if (!calm.matches) wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => at.set(flipKey(el), flipY(el))); return at; }
+function flipPlay(wrap, was) { const fly = flying; flying = null; if (!was.size) return;
+  wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => { const k = flipKey(el), y = was.get(k);
+    if (y == null) { if (!el.classList.contains('new')) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }); return; }   // (a header or line that just appeared)
+    const dy = y - flipY(el); if (Math.abs(dy) < 1) return;
+    if (k !== 'r:' + fly) { el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 440, easing: 'cubic-bezier(.22,.8,.26,1)' }); return; }
+    // (the item itself: lifts off the list, travels, settles; a longer trip takes a little longer)
+    el.style.zIndex = 4; const a = el.animate([
+      { transform: `translateY(${dy}px)`, boxShadow: '0 0 0 0 rgba(20,20,40,0)' },
+      { transform: `translateY(${dy * .82}px) scale(1.035)`, boxShadow: '0 18px 34px -12px rgba(20,20,40,.32)', offset: .28 },
+      { transform: 'none', boxShadow: '0 0 0 0 rgba(20,20,40,0)' }], { duration: Math.min(980, 520 + Math.abs(dy) * .3), easing: 'cubic-bezier(.6,.04,.22,1)' });
+    a.onfinish = a.oncancel = () => { el.style.zIndex = ''; }; }); }
 // ---------- keeping the page still: a rebuilt list keeps its height and scroll; the row you just added stays in view ----------
 let focusRow = null;
 // (adding never moves the page: Jarek keeps his place; the new row only lights up where it lands)
@@ -414,9 +436,9 @@ function showFocus(smooth) { focusRow = null; return;
   const r = row.getBoundingClientRect(), dock = $('.dock') ? $('.dock').getBoundingClientRect().top : innerHeight;
   if (r.top >= 16 && r.bottom <= dock - 8) return;   // (already visible: leave the page alone)
   scrollTo({ top: Math.max(0, r.top + scrollY - (dock - r.height) / 2), behavior: smooth ? 'smooth' : 'auto' }); }
-function renderList() { const wrap = $('#list'), y = scrollY; wrap.style.minHeight = wrap.offsetHeight + 'px';
+function renderList() { const wrap = $('#list'), y = scrollY, was = flipSnap(wrap); wrap.style.minHeight = wrap.offsetHeight + 'px';
   try { buildList(); } finally { wrap.style.minHeight = ''; }
-  if (Math.abs(scrollY - y) > 1) scrollTo(0, y); holdPin();
+  if (Math.abs(scrollY - y) > 1) scrollTo(0, y); holdPin(); flipPlay(wrap, was);
   if (focusRow) showFocus(false); }
 let browsing = false, exShown = false;   // (set when the list was shown empty; lasts until the app is opened again)
 function buildList() {
@@ -426,10 +448,17 @@ function buildList() {
   if (np) wrap.insertAdjacentHTML('beforeend', `<div class="pband"><div class="c"><div class="banner"><span class="badge badge--promo">%</span>${np} ${plural(np, 'produkt', 'produkty', 'produktów')} z listy taniej w ${IN[s.id] || s.name}</div></div></div>`);
   else if (prWait === id && open.length) wrap.insertAdjacentHTML('beforeend', '<div class="pband" aria-hidden="true"><div class="c"><div class="banner is-loading"><span class="skel skel--round"></span><span class="skel skel--text"></span></div></div></div>');
   if (!all.length) { browsing = true; renderEmpty(wrap); return; }
-  for (const cat of order) { const its = all.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat], left = its.filter(i => !i.done).length;
+  if (done.length) { wrap.insertAdjacentHTML('beforeend', `<div class="hidebar" data-flip="bar"><div class="c"><button type="button" class="btn btn--soft btn--sm" id="hideDone" aria-pressed="${hideDone}">${ic(hideDone ? 'eye' : 'eyeOff', 2)}${hideDone ? 'Pokaż kupione' : 'Ukryj kupione'}</button></div></div>`);
+    $('#hideDone').onclick = () => { hideDone = !hideDone; try { localStorage.setItem('koszyk.hideDone', hideDone ? '1' : '0'); } catch { } vib(6); render(); }; }
+  if (hideDone && done.length && !open.length) wrap.insertAdjacentHTML('beforeend', '<p class="alldone"><span class="c">Wszystko z listy jest już w koszyku.</span></p>');
+  // (the aisles hold only what is still missing; bought items go to the very bottom, in the order they went into the cart)
+  for (const cat of order) { const its = open.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat];
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
-    sec.innerHTML = `<div class="h"><div class="c"><span class="hic" aria-hidden="true">${CAT_EMOJI[cat] || ''}</span>${esc(c.name)}<span class="n">${left ? left : '✓'}</span></div></div>`;
+    sec.innerHTML = `<div class="h" data-flip="h:${cat}"><div class="c"><span class="hic" aria-hidden="true">${CAT_EMOJI[cat] || ''}</span>${esc(c.name)}<span class="n">${its.length}</span></div></div>`;
     for (const it of its) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
+  if (done.length && !hideDone) { const sec = document.createElement('section'); sec.className = 'sec bought';
+    sec.innerHTML = `<div class="h" data-flip="h:bought"><div class="c"><span class="hic" aria-hidden="true">🛒</span>W koszyku<span class="n">${done.length}</span></div></div>`;
+    for (const it of done.slice().sort((a, b) => (a.doneAt || a.updatedAt) - (b.doneAt || b.updatedAt))) sec.appendChild(rowEl(it)); wrap.appendChild(sec); }
   seenCats = new Set(all.map(i => i.cat));
   // (the bottom: two square tiles side by side. Left, dark: where your list is cheapest today → the comparison.
   //  Right, our green: this shop's leaflet → a full-screen mini leaflet. The list itself stays about your products.)
