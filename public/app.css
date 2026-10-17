@@ -582,3 +582,7 @@ body { padding-bottom: calc(190px + var(--safeB)); }
 .sec.bought::before { content: ''; display: block; height: 8px; background: var(--soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .sec.bought .h .c { padding-top: var(--s-5); }
 
+
+/* a ticked line on its way out: no second tap while it fades */
+.row.gone { pointer-events: none; }
+.freq.still .frq__chip { animation: none; }

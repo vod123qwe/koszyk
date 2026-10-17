@@ -362,10 +362,15 @@ const emojiIn_ = (n, words, list) => { for (const [k, e] of list) if (k.includes
 function emojiGuess(name) { const n = foldPL(name || ''), words = n.split(/[\s,-]+/).filter(Boolean), nonFood = (CAT.nonfood || []).some(w => (String(name || '').toLowerCase() + ' ').startsWith(w));
   return nonFood ? emojiIn_(n, words, EMO_DOM_) : emojiIn_(n, words, EMO_) || emojiIn_(n, words, EMO_DOM_); }
 const emojiOf = it => it.emoji || emojiGuess(it.name) || (it.cat && it.cat !== 'dom' && looksLikeProduct(it) ? CAT_EMOJI[it.cat] : null);
-function tick(row, it) {
-  if (it.done) { flying = it.id; put('items', { ...it, done: false, doneAt: null }); return; }   // (a second tap takes the line back off)
+function tick(row, it) { if (row.classList.contains('gone')) return;
+  if (it.done) { leave(row, () => { arrived = it.id; put('items', { ...it, done: false, doneAt: null }); }); return; }   // (a second tap takes the line back off)
   if (row.classList.contains('on')) return; row.classList.add('on'); ticking.add(it.id); vib(12);
-  setTimeout(() => { ticking.delete(it.id); remember(it); learn(it.cat); flying = it.id; put('items', { ...it, done: true, doneAt: Date.now() }); }, 560); }
+  setTimeout(() => leave(row, () => { ticking.delete(it.id); remember(it); learn(it.cat); arrived = it.id; put('items', { ...it, done: true, doneAt: Date.now() }); }), 560); }
+// (after the pencil line the item fades out where it stands; then the list rolls up into its place)
+function leave(row, then) { let once = false; const go = () => { if (!once) { once = true; then(); } };
+  if (calm.matches || !row.isConnected) return go();
+  row.classList.add('gone'); row.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-out', fill: 'forwards' }).onfinish = go;
+  setTimeout(go, 400); }
 // (each line a touch its own: nearly straight, the slightest rise and dip, seeded by the item)
 function pencil(id) { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const r = k => ((h >>> k) % 100) / 100;
   const y0 = 4.6 + r(1) * .9, y1 = 4 + r(5) * 1.4, y2 = 4.2 + r(9) * 1.2, y3 = 4.4 + r(13) * 1;
@@ -407,22 +412,17 @@ function rowEl(it) {
   const sb = row.querySelector('[data-subs]'); if (sb) sb.onclick = () => subsSheet(it);
   swipe(row, it); return row; }
 let seenCats = new Set(), chipsKey = '';
-// ---------- moving lines: a bought item flies down to "W koszyku", the rest slide up into its place (FLIP across the rebuild) ----------
+// ---------- moving lines: the rest of the list rolls up (or down) into place with a little spring, one line after another (FLIP across the rebuild) ----------
 // (positions in page coordinates, so keeping the scroll still between the two measurements does not count as movement)
-let flying = null; const calm = matchMedia('(prefers-reduced-motion: reduce)');
+let arrived = null; const calm = matchMedia('(prefers-reduced-motion: reduce)');
 const flipKey = el => el.dataset.flip || 'r:' + el.dataset.id, flipY = el => el.getBoundingClientRect().top + scrollY;
-function flipSnap(wrap) { const at = new Map(); if (!calm.matches) wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => at.set(flipKey(el), flipY(el))); return at; }
-function flipPlay(wrap, was) { const fly = flying; flying = null; if (!was.size) return;
+function flipSnap(wrap) { const at = new Map(); if (!calm.matches) wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => { if (!el.classList.contains('gone')) at.set(flipKey(el), flipY(el)); }); return at; }
+function flipPlay(wrap, was) { const got = 'r:' + arrived; arrived = null; if (!was.size) return; let n = 0;
   wrap.querySelectorAll('.row[data-id], [data-flip]').forEach(el => { const k = flipKey(el), y = was.get(k);
-    if (y == null) { if (!el.classList.contains('new')) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }); return; }   // (a header or line that just appeared)
+    // (a header or line that just appeared, and the ticked item in its new section, fade in)
+    if (y == null || k === got) { if (!el.classList.contains('new')) el.animate([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: k === got ? 180 : 0, easing: 'ease-out', fill: 'backwards' }); return; }
     const dy = y - flipY(el); if (Math.abs(dy) < 1) return;
-    if (k !== 'r:' + fly) { el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 440, easing: 'cubic-bezier(.22,.8,.26,1)' }); return; }
-    // (the item itself: lifts off the list, travels, settles; a longer trip takes a little longer)
-    el.style.zIndex = 4; const a = el.animate([
-      { transform: `translateY(${dy}px)`, boxShadow: '0 0 0 0 rgba(20,20,40,0)' },
-      { transform: `translateY(${dy * .82}px) scale(1.035)`, boxShadow: '0 18px 34px -12px rgba(20,20,40,.32)', offset: .28 },
-      { transform: 'none', boxShadow: '0 0 0 0 rgba(20,20,40,0)' }], { duration: Math.min(980, 520 + Math.abs(dy) * .3), easing: 'cubic-bezier(.6,.04,.22,1)' });
-    a.onfinish = a.oncancel = () => { el.style.zIndex = ''; }; }); }
+    el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 520, delay: Math.min(n++ * 16, 160), easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'backwards' }); }); }
 // ---------- keeping the page still: a rebuilt list keeps its height and scroll; the row you just added stays in view ----------
 let focusRow = null;
 // (adding never moves the page: Jarek keeps his place; the new row only lights up where it lands)
@@ -436,13 +436,13 @@ function renderList() { const wrap = $('#list'), y = scrollY, was = flipSnap(wra
   try { buildList(); } finally { wrap.style.minHeight = ''; }
   if (Math.abs(scrollY - y) > 1) scrollTo(0, y); holdPin(); flipPlay(wrap, was);
   if (focusRow) showFocus(false); }
-let browsing = false, exShown = false;   // (set when the list was shown empty; lasts until the app is opened again)
+let browsing = false, exShown = false, freqShown = false;   // (set when the list was shown empty; lasts until the app is opened again)
 function buildList() {
   const wrap = $('#list'), id = store(), order = orderFor(id), all = Object.values(C.items).filter(i => !i.deleted), open = all.filter(i => !i.done), done = all.filter(i => i.done);
   wrap.innerHTML = '';
   if (!all.length) { browsing = true; renderEmpty(wrap); return; }
   // (what you often buy, on top: one tap puts it on the list; it stands in for "Może cię zainteresować" while browsing too)
-  wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) wireAdds(fq);
+  wrap.insertAdjacentHTML('beforeend', freqHtml()); const fq = wrap.querySelector('.freq'); if (fq) { wireAdds(fq); fq.classList.toggle('still', freqShown); freqShown = true; }   // (the pills rise in once, not on every rebuild)
   // (the aisles hold only what is still missing; bought items go to the very bottom, in the order they went into the cart)
   for (const cat of order) { const its = open.filter(i => i.cat === cat).sort((a, b) => a.createdAt - b.createdAt); if (!its.length) continue; const c = CATS[cat];
     const sec = document.createElement('section'); sec.className = 'sec' + (seenCats.has(cat) ? '' : ' enter');
